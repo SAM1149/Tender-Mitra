@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tender Mitra Pro | Professional Billing</title>
+    <title>Tender Mitra Pro | Tally Style Billing</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -12,163 +12,191 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .tab-deselect-fix input:focus { border-color: #4f46e5; outline: none; ring: 2px; }
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        body { font-family: 'Roboto', sans-serif; -webkit-font-smoothing: antialiased; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="bg-gray-100">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
+        const { useState, useEffect, useCallback, useMemo } = React;
+
+        // --- CUSTOM HOOK FOR STABLE PROFILE INPUTS ---
+        function useProfileState(initialData) {
+            const [data, setData] = useState(initialData);
+            const updateField = (field, value) => {
+                const newData = { ...data, [field]: value };
+                setData(newData);
+                localStorage.setItem('tm_profile_v2', JSON.stringify(newData));
+            };
+            return [data, updateField];
+        }
 
         function TenderMitra() {
             const [view, setView] = useState('home'); 
-            const [invoices, setInvoices] = useState([]);
+            const [invoices, setInvoices] = useState(() => {
+                const saved = localStorage.getItem('tm_invoices');
+                return saved ? JSON.parse(saved) : [];
+            });
             const [showBillModal, setShowBillModal] = useState(false);
             
-            // Profile State - Initialized from LocalStorage to prevent data loss
-            const [userProfile, setUserProfile] = useState(() => {
-                const saved = localStorage.getItem('tm_profile');
+            // Profile State with persistence
+            const [userProfile, setUserProfile] = useProfileState(() => {
+                const saved = localStorage.getItem('tm_profile_v2');
                 return saved ? JSON.parse(saved) : {
-                    name: "SAM ENTERPRISES",
-                    address: "Narnaul, Haryana",
-                    gstin: "06AAAAA0000A1Z5",
+                    name: "SELF LEARNING",
+                    subHeader: "TALLY CUSTOMIZATION",
+                    address: "A.B Patel Road, Goregaon, Mumbai",
+                    gstin: "27AXXXX54521X1Z",
+                    phone: "9407808553",
+                    email: "computersolutionsxyz@gmail.com",
+                    bankName: "AXIS BANK NEW4525",
+                    accNo: "452145224525",
+                    ifsc: "AXIS45245",
+                    pan: "ACPW2876P",
+                    uam: "MH33DO128954",
                     logo: null
                 };
             });
 
+            // Bill State for Multiple Items
+            const [billMeta, setBillMeta] = useState({ custName: '', custAddress: '', invoiceNo: 'GST/20-21/0101', date: new Date().toISOString().split('T')[0] });
+            const [items, setItems] = useState([{ id: 1, desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]);
+
             useEffect(() => {
-                localStorage.setItem('tm_profile', JSON.stringify(userProfile));
-            }, [userProfile]);
+                localStorage.setItem('tm_invoices', JSON.stringify(invoices));
+            }, [invoices]);
 
-            // Form State
-            const [form, setForm] = useState({
-                cust: '', item: '', qty: 1, price: 0, 
-                gst: 18, discount: 0, transport: 0
-            });
-
-            const calculateValues = useCallback(() => {
-                const gross = form.qty * form.price;
-                const taxable = gross - form.discount;
-                const gstTotal = taxable * (form.gst / 100);
-                const cgst = gstTotal / 2;
-                const sgst = gstTotal / 2;
-                const finalTotal = taxable + gstTotal + Number(form.transport);
-                return { gross, taxable, cgst, sgst, finalTotal };
-            }, [form]);
-
-            const handleLogoUpload = (e) => {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onloadend = () => setUserProfile(prev => ({...prev, logo: reader.result}));
-                if(file) reader.readAsDataURL(file);
+            const addNewItem = () => {
+                setItems([...items, { id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]);
             };
 
-            const generateProfessionalPDF = (inv, calcs) => {
+            const updateItem = (id, field, value) => {
+                setItems(items.map(it => it.id === id ? { ...it, [field]: value } : it));
+            };
+
+            const removeItem = (id) => {
+                if (items.length > 1) setItems(items.filter(it => it.id !== id));
+            };
+
+            const totals = useMemo(() => {
+                let subTotal = 0;
+                let totalTax = 0;
+                items.forEach(it => {
+                    const rowTotal = it.qty * it.rate;
+                    subTotal += rowTotal;
+                    totalTax += rowTotal * (it.gstRate / 100);
+                });
+                return { subTotal, cgst: totalTax / 2, sgst: totalTax / 2, grandTotal: subTotal + totalTax };
+            }, [items]);
+
+            // --- PDF GENERATOR ---
+            const downloadInvoice = (invData) => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 
-                // 1. Header & Branding
-                doc.setFillColor(79, 70, 229); // Indigo
-                doc.rect(0, 0, 210, 40, 'F');
-                doc.setTextColor(255, 255, 255);
+                // Header (Tally Style)
                 doc.setFontSize(22);
-                doc.text(userProfile.name, 15, 20);
-                doc.setFontSize(10);
-                doc.text(`${userProfile.address} | GSTIN: ${userProfile.gstin}`, 15, 28);
-                
-                // 2. Invoice Meta
+                doc.setTextColor(180, 0, 0); // Red Header
+                doc.text(userProfile.name, 105, 15, { align: 'center' });
                 doc.setTextColor(0, 0, 0);
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.text("TAX INVOICE", 150, 55);
-                doc.setFont(undefined, 'normal');
-                doc.setFontSize(10);
-                doc.text(`Date: ${inv.date}`, 150, 62);
-                doc.text(`Bill To: ${inv.cust}`, 15, 62);
+                doc.setFontSize(14);
+                doc.text(userProfile.subHeader, 105, 22, { align: 'center' });
+                doc.setFontSize(9);
+                doc.text(`${userProfile.address} | Contact: ${userProfile.phone}`, 105, 28, { align: 'center' });
+                doc.text(`GSTIN/UIN: ${userProfile.gstin}`, 105, 33, { align: 'center' });
+                doc.line(10, 36, 200, 36);
 
-                // 3. Main Table
+                // Buyer & Invoice Details
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text("Details for Buyer:", 12, 42);
+                doc.setFont(undefined, 'normal');
+                doc.text(invData.meta.custName, 12, 48);
+                doc.text(invData.meta.custAddress, 12, 53);
+
+                doc.text(`Invoice No: ${invData.meta.invoiceNo}`, 120, 42);
+                doc.text(`Date: ${invData.meta.date}`, 170, 42);
+                doc.line(10, 60, 200, 60);
+
+                // Main Items Table
+                const tableBody = invData.items.map((it, index) => [
+                    index + 1,
+                    it.desc,
+                    it.hsn,
+                    it.qty,
+                    it.rate.toFixed(2),
+                    (it.qty * it.rate).toFixed(2)
+                ]);
+
                 doc.autoTable({
-                    startY: 75,
-                    head: [['Item Description', 'Qty', 'Rate', 'Gross Amount']],
-                    body: [[inv.item, inv.qty, `Rs.${inv.price}`, `Rs.${calcs.gross}`]],
-                    headStyles: { fillColor: [79, 70, 229] },
-                    theme: 'striped'
+                    startY: 65,
+                    head: [['Sr', 'Description', 'HSN', 'Qty', 'Unit Rate', 'Amount']],
+                    body: tableBody,
+                    theme: 'grid',
+                    headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+                    styles: { fontSize: 8 }
                 });
 
-                // 4. Calculations Column
+                // Summary Calculation
                 const finalY = doc.lastAutoTable.finalY + 10;
-                doc.setFontSize(10);
-                doc.text(`Sub-Total:`, 130, finalY); doc.text(`Rs.${calcs.gross}`, 175, finalY);
-                doc.text(`Discount (-):`, 130, finalY + 7); doc.text(`Rs.${inv.discount}`, 175, finalY + 7);
-                doc.text(`Taxable Value:`, 130, finalY + 14); doc.text(`Rs.${calcs.taxable}`, 175, finalY + 14);
-                doc.text(`CGST (${inv.gst/2}%):`, 130, finalY + 21); doc.text(`Rs.${calcs.cgst.toFixed(2)}`, 175, finalY + 21);
-                doc.text(`SGST (${inv.gst/2}%):`, 130, finalY + 28); doc.text(`Rs.${calcs.sgst.toFixed(2)}`, 175, finalY + 28);
-                doc.text(`Other Charges (+):`, 130, finalY + 35); doc.text(`Rs.${inv.transport}`, 175, finalY + 35);
-                
-                doc.line(130, finalY + 38, 200, finalY + 38);
-                doc.setFontSize(12);
+                doc.text(`Sub-Total: Rs.${invData.totals.subTotal.toFixed(2)}`, 140, finalY);
+                doc.text(`CGST: Rs.${invData.totals.cgst.toFixed(2)}`, 140, finalY + 5);
+                doc.text(`SGST: Rs.${invData.totals.sgst.toFixed(2)}`, 140, finalY + 10);
                 doc.setFont(undefined, 'bold');
-                doc.text(`Grand Total:`, 130, finalY + 45); doc.text(`Rs.${calcs.finalTotal.toFixed(2)}`, 175, finalY + 45);
+                doc.text(`GRAND TOTAL: Rs.${invData.totals.grandTotal.toFixed(2)}`, 140, finalY + 18);
 
-                // 5. Signature & Footer
-                doc.setFontSize(9);
+                // Footer: Bank & Signature
                 doc.setFont(undefined, 'normal');
-                doc.text("Authorized Signatory", 20, finalY + 70);
-                doc.line(15, finalY + 65, 60, finalY + 65);
+                doc.setFontSize(8);
+                doc.text("Bank Details:", 12, finalY + 30);
+                doc.text(`Bank: ${userProfile.bankName} | A/c: ${userProfile.accNo} | IFSC: ${userProfile.ifsc}`, 12, finalY + 35);
+                doc.text(`PAN: ${userProfile.pan} | UAM: ${userProfile.uam}`, 12, finalY + 40);
 
-                doc.setFontSize(10);
-                doc.setTextColor(100);
-                doc.text("---------------------------------------------------------------------------------", 105, 280, {align: 'center'});
+                doc.line(140, finalY + 60, 190, finalY + 60);
+                doc.text("Authorized Signatory", 150, finalY + 65);
+                
                 doc.setFont(undefined, 'italic');
-                doc.text("Save Paper, Save Tree. | Jai Hind!", 105, 285, {align: 'center'});
+                doc.text("Save Paper, Save Tree | Jai Hind!", 105, 285, { align: 'center' });
 
-                doc.save(`Invoice_${inv.cust}_${Date.now()}.pdf`);
+                doc.save(`Invoice_${invData.meta.custName}.pdf`);
             };
 
-            const saveAndDownload = () => {
-                const calcs = calculateValues();
-                const newBill = { ...form, total: calcs.finalTotal, date: new Date().toLocaleDateString(), id: Date.now() };
-                setInvoices([newBill, ...invoices]);
-                generateProfessionalPDF(newBill, calcs);
+            const saveBill = () => {
+                const invData = { meta: billMeta, items, totals, id: Date.now() };
+                setInvoices([invData, ...invoices]);
+                downloadInvoice(invData);
                 setShowBillModal(false);
             };
 
+            // --- UI VIEWS ---
             const Home = () => (
-                <div className="p-4 space-y-4 animate-fadeIn">
-                    <div className="bg-indigo-700 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
-                        <div className="relative z-10">
-                            <h2 className="text-sm opacity-80 uppercase tracking-widest font-bold">Total Sales</h2>
-                            <h1 className="text-4xl font-extrabold mt-1">₹{invoices.reduce((a,b)=>a+b.total,0).toLocaleString()}</h1>
-                        </div>
-                        <div className="absolute -right-4 -bottom-4 opacity-10 text-8xl rotate-12"><i className="fas fa-file-invoice"></i></div>
+                <div className="p-4 space-y-6">
+                    <div className="bg-indigo-700 p-6 rounded-3xl text-white shadow-lg">
+                        <p className="text-xs uppercase opacity-70">Total Revenue</p>
+                        <h1 className="text-3xl font-bold">₹{invoices.reduce((a,b)=>a+b.totals.grandTotal,0).toLocaleString()}</h1>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={()=>setShowBillModal(true)} className="bg-white p-5 rounded-2xl border-2 border-dashed border-indigo-200 flex flex-col items-center hover:bg-indigo-50 transition-all">
-                            <i className="fas fa-plus-circle text-2xl text-indigo-600 mb-2"></i>
-                            <span className="font-bold text-sm">Bill Banaye</span>
+                        <button onClick={()=>setShowBillModal(true)} className="bg-white p-5 rounded-2xl border flex flex-col items-center shadow-sm">
+                            <i className="fas fa-plus-circle text-2xl text-green-500 mb-2"></i>
+                            <span className="font-bold text-sm">Create Bill</span>
                         </button>
-                        <button onClick={()=>setView('profile')} className="bg-white p-5 rounded-2xl border flex flex-col items-center shadow-sm hover:border-indigo-500">
-                            <i className="fas fa-id-card text-2xl text-blue-500 mb-2"></i>
-                            <span className="font-bold text-sm">Profile Set</span>
+                        <button onClick={()=>setView('profile')} className="bg-white p-5 rounded-2xl border flex flex-col items-center shadow-sm">
+                            <i className="fas fa-building text-2xl text-blue-500 mb-2"></i>
+                            <span className="font-bold text-sm">Company Profile</span>
                         </button>
                     </div>
-
                     <div className="space-y-3">
-                        <h3 className="font-bold text-gray-800 flex items-center"><i className="fas fa-history mr-2 text-gray-400"></i> Recent Activity</h3>
+                        <h3 className="font-bold text-gray-700">Recent Invoices</h3>
                         {invoices.map(inv => (
-                            <div key={inv.id} className="bg-white p-4 rounded-xl border flex justify-between items-center shadow-sm">
+                            <div key={inv.id} className="bg-white p-4 rounded-xl border flex justify-between items-center shadow-xs">
                                 <div>
-                                    <p className="font-bold text-gray-800">{inv.cust}</p>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase">{inv.date} • {inv.item}</p>
+                                    <p className="font-bold">{inv.meta.custName}</p>
+                                    <p className="text-[10px] text-gray-400 uppercase">{inv.meta.date} • {inv.items.length} Items</p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-indigo-700">₹{inv.total.toFixed(2)}</p>
-                                    <button onClick={()=>generateProfessionalPDF(inv, calculateValues())} className="text-[10px] text-blue-600 font-bold underline">DOWNLOAD</button>
-                                </div>
+                                <button onClick={()=>downloadInvoice(inv)} className="text-indigo-600"><i className="fas fa-download text-lg"></i></button>
                             </div>
                         ))}
                     </div>
@@ -176,94 +204,88 @@
             );
 
             const Profile = () => (
-                <div className="p-4 space-y-4 tab-deselect-fix">
-                    <button onClick={()=>setView('home')} className="text-indigo-600 font-bold flex items-center"><i className="fas fa-arrow-left mr-2"></i> Back to Home</button>
-                    <div className="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-indigo-600">
-                        <h2 className="font-bold text-xl mb-6">Business Settings</h2>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Logo</label>
-                                <input type="file" onChange={handleLogoUpload} className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 mt-1"/>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Business Name</label>
-                                <input value={userProfile.name} onChange={e=>setUserProfile({...userProfile, name: e.target.value})} className="w-full border-b-2 border-gray-100 p-2 text-sm focus:border-indigo-600 transition-colors" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Address</label>
-                                <input value={userProfile.address} onChange={e=>setUserProfile({...userProfile, address: e.target.value})} className="w-full border-b-2 border-gray-100 p-2 text-sm focus:border-indigo-600" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">GST Number</label>
-                                <input value={userProfile.gstin} onChange={e=>setUserProfile({...userProfile, gstin: e.target.value})} className="w-full border-b-2 border-gray-100 p-2 text-sm focus:border-indigo-600" />
-                            </div>
-                            <button onClick={()=>setView('home')} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg mt-4 active:scale-95 transition-all">Save Changes</button>
+                <div className="p-4 space-y-4">
+                    <button onClick={()=>setView('home')} className="text-indigo-600 font-bold mb-2"><i className="fas fa-arrow-left"></i> Home</button>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
+                        <h2 className="font-bold text-xl border-b pb-2">Business Header</h2>
+                        <input value={userProfile.name} onChange={e=>setUserProfile('name', e.target.value)} placeholder="Company Name" className="w-full border p-3 rounded-lg" />
+                        <input value={userProfile.subHeader} onChange={e=>setUserProfile('subHeader', e.target.value)} placeholder="Subtitle (e.g. Construction)" className="w-full border p-3 rounded-lg" />
+                        <input value={userProfile.address} onChange={e=>setUserProfile('address', e.target.value)} placeholder="Full Address" className="w-full border p-3 rounded-lg" />
+                        <h2 className="font-bold text-xl border-b pb-2 pt-4">Bank & Tax</h2>
+                        <input value={userProfile.bankName} onChange={e=>setUserProfile('bankName', e.target.value)} placeholder="Bank Name" className="w-full border p-3 rounded-lg" />
+                        <input value={userProfile.accNo} onChange={e=>setUserProfile('accNo', e.target.value)} placeholder="Account Number" className="w-full border p-3 rounded-lg" />
+                        <div className="grid grid-cols-2 gap-2">
+                            <input value={userProfile.gstin} onChange={e=>setUserProfile('gstin', e.target.value)} placeholder="GSTIN" className="border p-3 rounded-lg" />
+                            <input value={userProfile.pan} onChange={e=>setUserProfile('pan', e.target.value)} placeholder="PAN No" className="border p-3 rounded-lg" />
                         </div>
+                        <button onClick={()=>setView('home')} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-md">Save Settings</button>
                     </div>
                 </div>
             );
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-10">
-                    <div className="bg-white px-4 py-3 border-b sticky top-0 z-20 flex items-center justify-between">
-                        <h1 className="text-indigo-700 font-black text-xl italic">TENDER MITRA</h1>
-                        {userProfile.logo && <img src={userProfile.logo} className="w-8 h-8 rounded-lg object-cover border" />}
+                    <div className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-30">
+                        <h1 className="font-black text-indigo-700 italic tracking-tighter text-xl">TENDER MITRA</h1>
+                        <i className="fas fa-user-circle text-gray-300 text-2xl"></i>
                     </div>
 
                     {view === 'home' && <Home />}
                     {view === 'profile' && <Profile />}
 
                     {showBillModal && (
-                        <div className="fixed inset-0 bg-black/60 z-50 flex items-end backdrop-blur-sm">
-                            <div className="bg-white w-full rounded-t-[2.5rem] p-6 space-y-4 shadow-2xl">
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-end animate-fadeIn">
+                            <div className="bg-white w-full rounded-t-[2rem] p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl">
                                 <div className="flex justify-between items-center border-b pb-4">
-                                    <h3 className="font-bold text-xl uppercase tracking-tight">Naya Bill Banaye</h3>
-                                    <button onClick={()=>setShowBillModal(false)} className="text-gray-300 text-2xl hover:text-red-500">&times;</button>
+                                    <h3 className="font-bold text-xl uppercase tracking-tighter">New Tally Invoice</h3>
+                                    <button onClick={()=>setShowBillModal(false)} className="text-gray-300 text-3xl">&times;</button>
                                 </div>
                                 
-                                <div className="space-y-3 max-h-[60vh] overflow-y-auto px-1 no-scrollbar">
-                                    <input placeholder="Grahak Ka Naam (Customer)" className="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:bg-white transition-all" onChange={e=>setForm({...form, cust: e.target.value})} />
-                                    <input placeholder="Kaam Ka Naam (Item)" className="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:bg-white transition-all" onChange={e=>setForm({...form, item: e.target.value})} />
-                                    
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-gray-50 p-2 rounded-xl border">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Quantity</label>
-                                            <input type="number" value={form.qty} className="w-full bg-transparent p-1 text-sm font-bold" onChange={e=>setForm({...form, qty: Number(e.target.value)})} />
-                                        </div>
-                                        <div className="bg-gray-50 p-2 rounded-xl border">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Rate (₹)</label>
-                                            <input type="number" placeholder="0.00" className="w-full bg-transparent p-1 text-sm font-bold text-blue-600" onChange={e=>setForm({...form, price: Number(e.target.value)})} />
-                                        </div>
+                                {/* Meta Section */}
+                                <div className="space-y-2">
+                                    <input placeholder="Buyer Name" className="w-full border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, custName: e.target.value})} />
+                                    <input placeholder="Buyer Address" className="w-full border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, custAddress: e.target.value})} />
+                                    <div className="flex gap-2">
+                                        <input value={billMeta.invoiceNo} className="w-1/2 border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, invoiceNo: e.target.value})} />
+                                        <input type="date" value={billMeta.date} className="w-1/2 border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, date: e.target.value})} />
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-red-50 p-2 rounded-xl border-red-100 border">
-                                            <label className="text-[10px] font-bold text-red-400 uppercase ml-1">Discount (-)</label>
-                                            <input type="number" className="w-full bg-transparent p-1 text-sm" onChange={e=>setForm({...form, discount: Number(e.target.value)})} />
-                                        </div>
-                                        <div className="bg-green-50 p-2 rounded-xl border-green-100 border">
-                                            <label className="text-[10px] font-bold text-green-600 uppercase ml-1">Transport (+)</label>
-                                            <input type="number" className="w-full bg-transparent p-1 text-sm" onChange={e=>setForm({...form, transport: Number(e.target.value)})} />
-                                        </div>
-                                    </div>
-
-                                    <select className="w-full border p-3 rounded-xl text-sm bg-indigo-50 font-bold text-indigo-700" onChange={e=>setForm({...form, gst: Number(e.target.value)})}>
-                                        <option value="18">Tax: GST 18%</option>
-                                        <option value="12">Tax: GST 12%</option>
-                                        <option value="5">Tax: GST 5%</option>
-                                        <option value="0">No Tax (0%)</option>
-                                    </select>
                                 </div>
 
-                                <div className="bg-indigo-700 text-white p-5 rounded-3xl flex justify-between items-center shadow-lg">
-                                    <div>
-                                        <p className="text-[10px] opacity-70 italic">Final Invoice Total</p>
-                                        <p className="text-3xl font-black tracking-tighter">₹{calculateValues().finalTotal.toLocaleString()}</p>
+                                {/* Multi-Item List */}
+                                <div className="space-y-4 pt-4 border-t">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="font-bold text-xs uppercase text-gray-400">Bill Items</h4>
+                                        <button onClick={addNewItem} className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">+ Add Item</button>
                                     </div>
-                                    <button onClick={saveAndDownload} className="bg-yellow-400 text-indigo-900 px-6 py-4 rounded-2xl font-black text-xs active:scale-95 transition-all flex items-center uppercase">
-                                        <i className="fas fa-file-pdf mr-2"></i> Download
-                                    </button>
+                                    {items.map((it, idx) => (
+                                        <div key={it.id} className="bg-gray-50 p-4 rounded-2xl space-y-2 relative border border-gray-100">
+                                            <button onClick={()=>removeItem(it.id)} className="absolute -top-2 -right-2 bg-red-100 text-red-600 w-6 h-6 rounded-full text-xs">&times;</button>
+                                            <input placeholder="Description (e.g. T-Shirt 28)" className="w-full border-none bg-transparent font-bold text-sm" onChange={e=>updateItem(it.id, 'desc', e.target.value)} />
+                                            <div className="grid grid-cols-4 gap-2">
+                                                <input placeholder="HSN" className="border-b bg-transparent text-xs p-1" onChange={e=>updateItem(it.id, 'hsn', e.target.value)} />
+                                                <input type="number" placeholder="Qty" className="border-b bg-transparent text-xs p-1" onChange={e=>updateItem(it.id, 'qty', Number(e.target.value))} />
+                                                <input type="number" placeholder="Rate" className="border-b bg-transparent text-xs p-1" onChange={e=>updateItem(it.id, 'rate', Number(e.target.value))} />
+                                                <select className="border-b bg-transparent text-xs p-1 font-bold text-indigo-600" onChange={e=>updateItem(it.id, 'gstRate', Number(e.target.value))}>
+                                                    <option value="18">18%</option>
+                                                    <option value="12">12%</option>
+                                                    <option value="5">5%</option>
+                                                    <option value="0">0%</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Total Summary */}
+                                <div className="bg-indigo-700 text-white p-5 rounded-3xl space-y-2 shadow-lg">
+                                    <div className="flex justify-between text-xs opacity-70 italic">
+                                        <span>Subtotal: ₹{totals.subTotal}</span>
+                                        <span>Tax (C+S): ₹{totals.cgst + totals.sgst}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2">
+                                        <p className="text-2xl font-black">₹{totals.grandTotal.toLocaleString()}</p>
+                                        <button onClick={saveBill} className="bg-yellow-400 text-indigo-900 px-6 py-4 rounded-2xl font-black text-xs uppercase shadow-md active:scale-95 transition-all">Download PDF</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
