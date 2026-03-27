@@ -1,255 +1,221 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi-EN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SaaS Billing System</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<style>
-body { font-family: Arial; margin:0; background:#f4f6f9; }
-header { background:#1e3c72; color:#fff; padding:12px; text-align:center; }
-
-.container { padding:10px; }
-
-.card {
-  background:#fff;
-  padding:15px;
-  margin:10px 0;
-  border-radius:10px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.1);
-}
-
-input, select, button {
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-}
-
-button { background:#3498db; color:#fff; border:none; }
-
-table {
-  width:100%;
-  border-collapse:collapse;
-}
-th, td {
-  border:1px solid #ccc;
-  padding:8px;
-  text-align:center;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tender Mitra | Bill & Tender App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
 </head>
+<body class="bg-gray-50">
+    <div id="root"></div>
 
-<body>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-<header>SaaS Billing System</header>
+        // --- MOCK DATA ---
+        const MOCK_TENDERS = [
+            { id: 1, title: "Road Construction - Narnaul", dept: "PWD Haryana", value: "₹45 Lakhs", date: "2026-04-10", cat: "Construction" },
+            { id: 2, title: "School Desk Supply", dept: "Education Dept", value: "₹12 Lakhs", date: "2026-04-05", cat: "Supply" },
+            { id: 3, title: "Milk Transport Service", dept: "Vita Dairy", value: "₹8 Lakhs", date: "2026-03-30", cat: "Transport" }
+        ];
 
-<div class="container">
+        // --- APP COMPONENT ---
+        function TenderMitra() {
+            const [view, setView] = useState('home'); // home, bill, tender, reports
+            const [invoices, setInvoices] = useState([]);
+            const [showBillModal, setShowBillModal] = useState(false);
 
-<!-- LOGIN -->
-<div id="login">
-<div class="card">
-<h3>Login</h3>
-<input id="username" placeholder="Enter name">
-<button onclick="login()">Login</button>
-</div>
-</div>
+            // Invoice Form State
+            const [form, setForm] = useState({ name: '', item: '', price: '', gst: 18 });
 
-<!-- APP -->
-<div id="app" style="display:none;">
+            const calculateTotal = (p, g) => {
+                const price = parseFloat(p) || 0;
+                return price + (price * (g / 100));
+            };
 
-<div class="card">
-<h3>Create Invoice</h3>
+            const handleCreateBill = () => {
+                const newBill = { ...form, id: Date.now(), total: calculateTotal(form.price, form.gst), date: new Date().toLocaleDateString() };
+                setInvoices([newBill, ...invoices]);
+                setShowBillModal(false);
+                alert("Bill Ban Gaya! (Bill Created)");
+            };
 
-<p><b>Invoice No:</b> <span id="invNo"></span></p>
+            // --- COMPONENTS ---
+            
+            const Header = () => (
+                <div className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md">
+                    <div className="flex justify-between items-center max-w-4xl mx-auto">
+                        <h1 className="font-bold text-xl tracking-tight italic">TENDER MITRA</h1>
+                        <div className="bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full text-xs font-bold">PRO</div>
+                    </div>
+                </div>
+            );
 
-<input id="customer" placeholder="Customer Name">
+            const BottomNav = () => (
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 safe-area-bottom shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:max-w-md md:mx-auto md:rounded-t-2xl">
+                    <NavBtn icon="fa-home" label="Home" active={view === 'home'} onClick={() => setView('home')} />
+                    <NavBtn icon="fa-file-invoice" label="Bill" active={view === 'bill'} onClick={() => setView('bill')} />
+                    <NavBtn icon="fa-gavel" label="Tender" active={view === 'tender'} onClick={() => setView('tender')} />
+                    <NavBtn icon="fa-chart-line" label="Report" active={view === 'reports'} onClick={() => setView('reports')} />
+                </div>
+            );
 
-<input id="pname" placeholder="Product">
-<input id="pprice" placeholder="Price">
+            const NavBtn = ({ icon, label, active, onClick }) => (
+                <button onClick={onClick} className={`flex flex-col items-center gap-1 ${active ? 'text-indigo-700' : 'text-gray-400'}`}>
+                    <i className={`fas ${icon} text-lg`}></i>
+                    <span className="text-[10px] font-bold">{label}</span>
+                </button>
+            );
 
-<select id="pgst">
-<option value="5">5%</option>
-<option value="12">12%</option>
-<option value="18">18%</option>
-</select>
+            // --- VIEWS ---
 
-<button onclick="addItem()">Add Item</button>
+            const HomeView = () => (
+                <div className="p-4 space-y-6 animate-fadeIn">
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <h2 className="text-gray-500 text-sm font-semibold uppercase">Business Health</h2>
+                        <div className="text-3xl font-bold text-gray-800 mt-1">₹ 1,45,000</div>
+                        <p className="text-green-500 text-xs mt-1 font-bold">+12% is mahine (this month)</p>
+                    </div>
 
-<table>
-<thead>
-<tr>
-<th>Item</th><th>Price</th><th>GST</th><th>Total</th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
+                    <div className="grid grid-cols-2 gap-4">
+                        <ActionCard color="bg-blue-500" icon="fa-plus" title="Bill Banaye" sub="Create Bill" onClick={() => setShowBillModal(true)} />
+                        <ActionCard color="bg-orange-500" icon="fa-search" title="Tender Dhundhe" sub="Find Tenders" onClick={() => setView('tender')} />
+                        <ActionCard color="bg-green-500" icon="fa-wallet" title="Kharcha" sub="Expenses" onClick={() => {}} />
+                        <ActionCard color="bg-indigo-600" icon="fa-file-pdf" title="Reports" sub="GST Summary" onClick={() => setView('reports')} />
+                    </div>
 
-<!-- EXTRA -->
-<h4>Adjustments</h4>
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
+                        <p className="text-xs text-yellow-800 font-medium">
+                            <i className="fas fa-info-circle mr-2"></i>
+                            Tender Mitra does not file GST. Please consult a CA for legal filing.
+                        </p>
+                    </div>
+                </div>
+            );
 
-<input id="discount" placeholder="Discount (₹ or %)">
-<input id="transport" placeholder="Transport Charges">
-<input id="other" placeholder="Other Charges">
+            const ActionCard = ({ color, icon, title, sub, onClick }) => (
+                <button onClick={onClick} className={`${color} p-4 rounded-2xl text-white text-left shadow-lg active:scale-95 transition-transform`}>
+                    <i className={`fas ${icon} text-xl mb-3`}></i>
+                    <div className="font-bold text-sm leading-tight">{title}</div>
+                    <div className="text-[10px] opacity-80">{sub}</div>
+                </button>
+            );
 
-<p><b>Final Total: ₹ <span id="finalTotal">0</span></b></p>
+            const TenderView = () => (
+                <div className="p-4 space-y-4">
+                    <h2 className="font-bold text-lg">Latest Government Tenders</h2>
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                        {['All', 'Construction', 'Transport', 'Supply'].map(c => (
+                            <span key={c} className="bg-white border px-4 py-1 rounded-full text-xs font-semibold whitespace-nowrap">{c}</span>
+                        ))}
+                    </div>
+                    {MOCK_TENDERS.map(t => (
+                        <div key={t.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-xs font-bold text-indigo-600 mb-1">{t.dept}</div>
+                            <div className="font-bold text-gray-800 mb-2">{t.title}</div>
+                            <div className="flex justify-between text-xs text-gray-500 mb-3">
+                                <span><i className="fas fa-map-marker-alt mr-1"></i> {t.cat}</span>
+                                <span><i className="fas fa-calendar mr-1"></i> {t.date}</span>
+                            </div>
+                            <div className="flex justify-between items-center border-t pt-3">
+                                <span className="font-bold text-gray-900">{t.value}</span>
+                                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Apply Now</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
 
-<button onclick="generatePDF()">Download Invoice</button>
+            const BillView = () => (
+                <div className="p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h2 className="font-bold text-lg">Recent Invoices</h2>
+                        <button onClick={() => setShowBillModal(true)} className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold">+ New Bill</button>
+                    </div>
+                    {invoices.length === 0 ? (
+                        <div className="text-center py-20 text-gray-400 text-sm">No bills yet. Click '+ New Bill'</div>
+                    ) : (
+                        invoices.map(inv => (
+                            <div key={inv.id} className="bg-white p-4 rounded-xl flex justify-between items-center border shadow-sm">
+                                <div>
+                                    <div className="font-bold">{inv.name}</div>
+                                    <div className="text-[10px] text-gray-500">{inv.date} | {inv.item}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="font-bold text-indigo-700">₹{inv.total.toFixed(2)}</div>
+                                    <button className="text-blue-500 text-[10px] font-bold underline">Download PDF</button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            );
 
-</div>
+            return (
+                <div className="max-w-md mx-auto min-h-screen pb-24 relative bg-gray-50">
+                    <Header />
+                    
+                    {view === 'home' && <HomeView />}
+                    {view === 'bill' && <BillView />}
+                    {view === 'tender' && <TenderView />}
+                    {view === 'reports' && <div className="p-10 text-center">GST Report coming soon to PRO users.</div>}
 
-<!-- PROFILE -->
-<div class="card">
-<h3>Profile</h3>
+                    <BottomNav />
 
-<input type="file" id="logoUpload">
-<img id="logoPreview" width="80">
+                    {/* BILL MODAL */}
+                    {showBillModal && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-end animate-fadeIn">
+                            <div className="bg-white w-full rounded-t-3xl p-6 space-y-4 shadow-2xl">
+                                <div className="flex justify-between items-center border-b pb-3">
+                                    <h3 className="font-bold text-lg">Naya Bill Banaye</h3>
+                                    <button onClick={() => setShowBillModal(false)} className="text-gray-400 text-xl">&times;</button>
+                                </div>
+                                <div className="space-y-3">
+                                    <input placeholder="Party Name (Customer)" className="w-full p-3 border rounded-xl text-sm" onChange={e => setForm({...form, name: e.target.value})} />
+                                    <input placeholder="Maal/Service (Item)" className="w-full p-3 border rounded-xl text-sm" onChange={e => setForm({...form, item: e.target.value})} />
+                                    <div className="flex gap-2">
+                                        <input placeholder="Rate (₹)" type="number" className="w-1/2 p-3 border rounded-xl text-sm" onChange={e => setForm({...form, price: e.target.value})} />
+                                        <select className="w-1/2 p-3 border rounded-xl text-sm font-bold" onChange={e => setForm({...form, gst: e.target.value})}>
+                                            <option value="18">GST 18%</option>
+                                            <option value="12">GST 12%</option>
+                                            <option value="5">GST 5%</option>
+                                            <option value="0">Zero GST</option>
+                                        </select>
+                                    </div>
+                                    <div className="bg-indigo-50 p-4 rounded-xl flex justify-between items-center">
+                                        <span className="text-xs font-bold text-indigo-700">Total Bill:</span>
+                                        <span className="text-xl font-bold text-indigo-800">₹{calculateTotal(form.price, form.gst).toFixed(2)}</span>
+                                    </div>
+                                    <button onClick={handleCreateBill} className="w-full bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg">Save & Download PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
-<input type="file" id="signUpload">
-<canvas id="canvas" width="250" height="100"></canvas>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TenderMitra />);
 
-<button onclick="saveProfile()">Save</button>
-</div>
-
-</div>
-</div>
-
-<script>
-
-// LOGIN
-function login(){
-  localStorage.setItem("user",username.value);
-  location.reload();
-}
-if(localStorage.getItem("user")){
-  login.style.display="none";
-  app.style.display="block";
-}
-
-// INVOICE NUMBER
-let inv = localStorage.getItem("inv") || 1001;
-invNo.innerText = inv;
-localStorage.setItem("inv", ++inv);
-
-// ITEMS
-let items=[];
-
-function addItem(){
-  let name=pname.value;
-  let price=parseFloat(pprice.value);
-  let gst=parseFloat(pgst.value);
-
-  let gstAmt=price*gst/100;
-  let total=price+gstAmt;
-
-  items.push({name,price,gst,total});
-  render();
-}
-
-function render(){
-  let html="";
-  let sum=0;
-
-  items.forEach(i=>{
-    html+=`<tr>
-      <td>${i.name}</td>
-      <td>₹${i.price}</td>
-      <td>${i.gst}%</td>
-      <td>₹${i.total.toFixed(2)}</td>
-    </tr>`;
-    sum+=i.total;
-  });
-
-  tbody.innerHTML=html;
-
-  // EXTRA CALC
-  let disc = discount.value || 0;
-  let trans = parseFloat(transport.value)||0;
-  let otherC = parseFloat(other.value)||0;
-
-  if(disc.includes("%")){
-    disc = sum * parseFloat(disc)/100;
-  } else {
-    disc = parseFloat(disc)||0;
-  }
-
-  let final = sum - disc + trans + otherC;
-  finalTotal.innerText = final.toFixed(2);
-}
-
-// PROFILE
-let logo="",sign="";
-logoUpload.onchange=e=>{
-  let r=new FileReader();
-  r.onload=ev=>{
-    logo=ev.target.result;
-    logoPreview.src=logo;
-  };
-  r.readAsDataURL(e.target.files[0]);
-};
-
-let ctx=canvas.getContext("2d");
-signUpload.onchange=e=>{
-  let r=new FileReader();
-  r.onload=ev=>{
-    let img=new Image();
-    img.onload=()=>ctx.drawImage(img,0,0,250,100);
-    img.src=ev.target.result;
-  };
-  r.readAsDataURL(e.target.files[0]);
-};
-
-function saveProfile(){
-  localStorage.setItem("logo",logo);
-  localStorage.setItem("sign",canvas.toDataURL());
-  alert("Saved");
-}
-
-// PDF
-async function generatePDF(){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF("p","mm","a4");
-
-  let y=20;
-
-  doc.setFillColor(30,60,114);
-  doc.rect(0,0,210,20,'F');
-  doc.setTextColor(255,255,255);
-  doc.text("INVOICE",90,13);
-
-  let logo=localStorage.getItem("logo");
-  let sign=localStorage.getItem("sign");
-
-  if(logo){
-    doc.addImage(logo,'PNG',10,3,30,15);
-  }
-
-  doc.setTextColor(0,0,0);
-
-  doc.text("Invoice: "+invNo.innerText,10,30);
-  doc.text("Customer: "+customer.value,10,38);
-  doc.text("Date: "+new Date().toLocaleDateString(),150,30);
-
-  y=50;
-
-  items.forEach(i=>{
-    doc.text(`${i.name} - ₹${i.total.toFixed(2)}`,10,y);
-    y+=8;
-  });
-
-  y+=10;
-  doc.text("Final Total: ₹"+finalTotal.innerText,140,y);
-
-  if(sign){
-    doc.text("Signature",10,260);
-    doc.addImage(sign,'PNG',10,265,50,20);
-  }
-
-  doc.save("Invoice_SaaS.pdf");
-}
-
-</script>
-
+        // Simple Service Worker Registration for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ID0+IHsgcmV0dXJuOyB9KTs=');
+            });
+        }
+    </script>
 </body>
 </html>
