@@ -1,227 +1,486 @@
 <!DOCTYPE html>
-<html lang="hi-EN">
+<html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tender Mitra | Pro Billing</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        input:focus, select:focus { border-color: #4f46e5; ring: 2px; ring-color: #c7d2fe; }
-        .input-label { font-size: 10px; font-weight: 700; color: #6366f1; text-transform: uppercase; margin-bottom: 2px; display: block; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tender Mitra Pro Billing</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --surface: rgba(255,255,255,.88);
+      --surface-2: #ffffff;
+      --text: #141b34;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #2563eb;
+      --primary-2: #1d4ed8;
+      --success: #0f766e;
+      --warning: #b45309;
+      --danger: #dc2626;
+      --shadow: 0 10px 30px rgba(15, 23, 42, .08);
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: radial-gradient(circle at top left, #dbeafe, #f8fafc 35%, #eef2ff 100%); color: var(--text); }
+    .glass { background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    .card { border: 1px solid rgba(255,255,255,.8); box-shadow: var(--shadow); }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: #4f46e5; margin-bottom: 6px; display: block; }
+    .input, .select, .textarea {
+      width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 16px; padding: 12px 14px; font-size: 14px; outline: none;
+      transition: .2s ease;
+    }
+    .input:focus, .select:focus, .textarea:focus { border-color: #93c5fd; box-shadow: 0 0 0 4px rgba(37,99,235,.10); }
+    .textarea { min-height: 84px; resize: vertical; }
+    .btn { border: none; border-radius: 16px; padding: 12px 16px; font-weight: 700; cursor: pointer; transition: .2s ease; }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; }
+    .btn-secondary { background: #eef2ff; color: #3730a3; }
+    .btn-soft { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
+    .pill { border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; }
+    .grid-auto { display: grid; gap: 14px; }
+    .sticky-action { position: sticky; bottom: 0; z-index: 20; }
+    @media (min-width: 768px) {
+      .desktop-grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
-    <div id="root"></div>
+<body>
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+  <script type="text/babel">
+    const { useMemo, useState } = React;
 
-        // Utility: Number to Words (Indian System)
-        function numberToWords(num) {
-            const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
-            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-            if ((num = num.toString()).length > 9) return 'Overflow';
-            const n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-            if (!n) return ''; 
-            let str = '';
-            str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
-            str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
-            str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
-            str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
-            str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) + 'Only' : 'Only';
-            return str;
+    const GST_SAMPLE = {
+      "09ABCDE1234F1Z5": {
+        legalName: "M/S SHARMA TRADERS",
+        address: "Shop No. 12, Transport Nagar, Kanpur, Uttar Pradesh - 208023",
+        state: "Uttar Pradesh",
+        stateCode: "09",
+        mobile: "9876543210"
+      },
+      "06AAAAA0000A1Z5": {
+        legalName: "SAM ENTERPRISES",
+        address: "Industrial Area, Narnaul, Haryana - 123001",
+        state: "Haryana",
+        stateCode: "06",
+        mobile: "9810011122"
+      }
+    };
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(value || 0));
+    }
+
+    function numberToWords(num) {
+      const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+      const b = ['', '', 'Twenty ', 'Thirty ', 'Forty ', 'Fifty ', 'Sixty ', 'Seventy ', 'Eighty ', 'Ninety '];
+      num = Math.round(Number(num || 0));
+      if (num === 0) return 'Zero Only';
+      if ((num = num.toString()).length > 9) return 'Overflow';
+      const n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+      if (!n) return '';
+      let str = '';
+      str += n[1] !== '00' ? (a[+n[1]] || b[n[1][0]] + a[n[1][1]]) + 'Crore ' : '';
+      str += n[2] !== '00' ? (a[+n[2]] || b[n[2][0]] + a[n[2][1]]) + 'Lakh ' : '';
+      str += n[3] !== '00' ? (a[+n[3]] || b[n[3][0]] + a[n[3][1]]) + 'Thousand ' : '';
+      str += n[4] !== '0' ? (a[+n[4]] || b[n[4][0]] + a[n[4][1]]) + 'Hundred ' : '';
+      str += n[5] !== '00' ? ((str !== '') ? 'and ' : '') + (a[+n[5]] || b[n[5][0]] + a[n[5][1]]) + 'Only' : 'Only';
+      return str.trim();
+    }
+
+    function createItem() {
+      return {
+        id: Date.now() + Math.random(),
+        desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18,
+        unitType: 'Nos', density: '', length: '', weight: '', cube: '', customUnit: ''
+      };
+    }
+
+    function TenderMitraApp() {
+      const [view, setView] = useState('dashboard');
+      const [showInvoice, setShowInvoice] = useState(false);
+      const [profile, setProfile] = useState({
+        companyName: 'SAM ENTERPRISES',
+        ownerName: 'Samrat Singh',
+        address: 'Narnaul, Haryana',
+        fullAddress: 'Industrial Area, Narnaul, Haryana - 123001',
+        gstin: '06AAAAA0000A1Z5',
+        state: 'Haryana',
+        stateCode: '06',
+        mobile: '9810011122',
+        bankName: 'AXIS BANK',
+        accNo: '91234567890',
+        ifsc: 'UTIB0001234',
+        signatureName: 'Authorized Signatory',
+        signature: ''
+      });
+
+      const [invoices, setInvoices] = useState([]);
+      const [bill, setBill] = useState({
+        invoiceNo: 'INV-' + String(Date.now()).slice(-5),
+        date: new Date().toISOString().split('T')[0],
+        buyerName: '',
+        buyerMobile: '',
+        buyerGSTIN: '',
+        buyerAddress: '',
+        buyerFullAddress: '',
+        placeOfSupply: 'Uttar Pradesh',
+        stateCode: '09',
+        discount: 0,
+        transportCharges: 0,
+        items: [createItem()]
+      });
+
+      const fetchGSTDetails = (gst, target) => {
+        const clean = (gst || '').trim().toUpperCase();
+        if (!clean) return;
+        const found = GST_SAMPLE[clean];
+        if (!found) {
+          alert('GST sample data not found in demo. Connect a GST API to fetch live buyer/seller address.');
+          return;
         }
+        if (target === 'buyer') {
+          setBill(prev => ({
+            ...prev,
+            buyerGSTIN: clean,
+            buyerName: found.legalName,
+            buyerAddress: found.address,
+            buyerFullAddress: found.address,
+            buyerMobile: found.mobile,
+            placeOfSupply: found.state,
+            stateCode: found.stateCode
+          }));
+        } else {
+          setProfile(prev => ({
+            ...prev,
+            gstin: clean,
+            companyName: found.legalName,
+            fullAddress: found.address,
+            address: found.address,
+            state: found.state,
+            stateCode: found.stateCode,
+            mobile: found.mobile
+          }));
+        }
+      };
 
-        function TenderMitra() {
-            const [view, setView] = useState('home');
-            const [showBillModal, setShowBillModal] = useState(false);
-            const [invoices, setInvoices] = useState(() => JSON.parse(localStorage.getItem('tm_inv_v6')) || []);
-            
-            const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('tm_prof_v6')) || {
-                companyName: "SAM ENTERPRISES",
-                address: "Narnaul, Haryana",
-                gstin: "06AAAAA0000A1Z5",
-                stateCode: "06",
-                bankName: "AXIS BANK",
-                accNo: "91234567890",
-                ifsc: "UTIB0001234",
-                logo: "",
-                signature: ""
-            });
+      const handleItemChange = (id, key, value) => {
+        setBill(prev => ({ ...prev, items: prev.items.map(item => item.id === id ? { ...item, [key]: value } : item) }));
+      };
 
-            const [bill, setBill] = useState({
-                invoiceNo: `INV-${Date.now().toString().slice(-4)}`,
-                date: new Date().toISOString().split('T')[0],
-                buyerName: "",
-                buyerAddress: "",
-                buyerGSTIN: "",
-                placeOfSupply: "Haryana",
-                items: [{ id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }],
-                discount: 0,
-                transportCharges: 0
-            });
+      const totals = useMemo(() => {
+        const taxableBeforeDiscount = bill.items.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.rate || 0)), 0);
+        const discount = Number(bill.discount || 0);
+        const transport = Number(bill.transportCharges || 0);
+        const taxableValue = Math.max(taxableBeforeDiscount - discount, 0);
+        const avgGstRate = bill.items.length ? bill.items.reduce((sum, item) => sum + Number(item.gstRate || 0), 0) / bill.items.length : 0;
+        const gstTotal = taxableValue * avgGstRate / 100;
+        const grandTotal = taxableValue + gstTotal + transport;
+        return { taxableBeforeDiscount, taxableValue, gstTotal, cgst: gstTotal / 2, sgst: gstTotal / 2, grandTotal };
+      }, [bill]);
 
-            useEffect(() => { localStorage.setItem('tm_prof_v6', JSON.stringify(profile)); }, [profile]);
-            useEffect(() => { localStorage.setItem('tm_inv_v6', JSON.stringify(invoices)); }, [invoices]);
+      const generatePDF = (invoiceData, calcTotals) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        doc.setFillColor(37, 99, 235);
+        doc.roundedRect(10, 10, 190, 26, 4, 4, 'F');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.text(profile.companyName, 14, 20);
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text(profile.fullAddress, 14, 26);
+        doc.text(`GSTIN: ${profile.gstin} | Mobile: ${profile.mobile} | State: ${profile.state} (${profile.stateCode})`, 14, 31);
 
-            const handleProfileChange = (field, value) => setProfile(prev => ({ ...prev, [field]: value }));
-            const handleBillChange = (field, value) => setBill(prev => ({ ...prev, [field]: value }));
-            const handleItemChange = (id, field, value) => {
-                setBill(prev => ({ ...prev, items: prev.items.map(it => it.id === id ? { ...it, [field]: value } : it) }));
-            };
+        doc.setTextColor(17, 24, 39);
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(15);
+        doc.text('TAX INVOICE', 150, 20);
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Invoice No: ${invoiceData.invoiceNo}`, 140, 27);
+        doc.text(`Date: ${invoiceData.date}`, 140, 32);
 
-            const totals = useMemo(() => {
-                let taxableValue = bill.items.reduce((acc, it) => acc + (it.qty * it.rate), 0) - Number(bill.discount);
-                const totalGST = bill.items.reduce((acc, it) => acc + ((it.qty * it.rate) * (it.gstRate / 100)), 0);
-                const grandTotal = taxableValue + totalGST + Number(bill.transportCharges);
-                return { taxableValue, cgst: totalGST / 2, sgst: totalGST / 2, grandTotal };
-            }, [bill]);
+        doc.setDrawColor(226,232,240);
+        doc.roundedRect(10, 42, 92, 34, 4, 4);
+        doc.roundedRect(108, 42, 92, 34, 4, 4);
+        doc.setFont(undefined, 'bold');
+        doc.text('Seller Details', 14, 49);
+        doc.text('Buyer Details', 112, 49);
+        doc.setFont(undefined, 'normal');
+        doc.text(`${profile.companyName}\n${profile.fullAddress}\nMobile: ${profile.mobile}\nGSTIN: ${profile.gstin}`, 14, 55);
+        doc.text(`${invoiceData.buyerName}\n${invoiceData.buyerFullAddress || invoiceData.buyerAddress}\nMobile: ${invoiceData.buyerMobile}\nGSTIN: ${invoiceData.buyerGSTIN}`, 112, 55);
 
-            const generatePDF = (invoiceData, calcTotals) => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-                if (profile.logo) doc.addImage(profile.logo, 12, 10, 35, 18);
-                doc.setFontSize(18); doc.setFont(undefined, 'bold');
-                doc.text(profile.companyName, 105, 16, { align: 'center' });
-                doc.setFontSize(9); doc.setFont(undefined, 'normal');
-                doc.text(`${profile.address} | GSTIN: ${profile.gstin}`, 105, 23, { align: 'center' });
-                doc.line(10, 30, 200, 30);
-                doc.setFontSize(14); doc.text("TAX INVOICE", 105, 37, { align: 'center' });
-                doc.line(10, 40, 200, 40);
-                doc.setFontSize(9); doc.setFont(undefined, 'bold');
-                doc.text("Bill To:", 12, 48); doc.text("Invoice Details:", 140, 48);
-                doc.setFont(undefined, 'normal');
-                doc.text(`${invoiceData.buyerName}\n${invoiceData.buyerAddress}\nGSTIN: ${invoiceData.buyerGSTIN}`, 12, 53);
-                doc.text(`No: ${invoiceData.invoiceNo}\nDate: ${invoiceData.date}\nSupply: ${invoiceData.placeOfSupply}`, 140, 53);
-                doc.autoTable({
-                    startY: 75,
-                    head: [['S.No', 'Description', 'HSN', 'Qty', 'Rate', 'GST %', 'Total']],
-                    body: invoiceData.items.map((it, idx) => [
-                        idx + 1, it.desc, it.hsn, it.qty, it.rate.toFixed(2), `${it.gstRate}%`,
-                        ((it.qty * it.rate) * (1 + it.gstRate/100)).toFixed(2)
-                    ]),
-                    theme: 'grid', styles: { fontSize: 8 },
-                    headStyles: { fillColor: [79, 70, 229] }
-                });
-                const fY = doc.lastAutoTable.finalY + 10;
-                doc.text(`Amount in words: ${numberToWords(Math.round(calcTotals.grandTotal))}`, 12, fY);
-                doc.text(`Taxable: Rs.${calcTotals.taxableValue.toFixed(2)}`, 140, fY);
-                doc.text(`GST Total: Rs.${(calcTotals.cgst + calcTotals.sgst).toFixed(2)}`, 140, fY + 5);
-                doc.setFont(undefined, 'bold');
-                doc.text(`Grand Total: Rs.${calcTotals.grandTotal.toFixed(2)}`, 140, fY + 12);
-                if (profile.signature) doc.addImage(profile.signature, 150, fY + 35, 35, 15);
-                doc.setFont(undefined, 'normal');
-                doc.text("Authorized Signatory", 152, fY + 57);
-                doc.save(`${invoiceData.invoiceNo}.pdf`);
-            };
+        doc.autoTable({
+          startY: 84,
+          head: [["#", "Description", "HSN", "Qty", "Unit", "Rate", "GST", "Amount"]],
+          body: invoiceData.items.map((it, i) => {
+            const unit = it.unitType === 'Other' ? it.customUnit : it.unitType;
+            return [
+              i + 1,
+              `${it.desc}${it.length ? ` | L:${it.length}` : ''}${it.weight ? ` | Wt:${it.weight}` : ''}${it.density ? ` | D:${it.density}` : ''}${it.cube ? ` | C:${it.cube}` : ''}`,
+              it.hsn,
+              it.qty,
+              unit,
+              Number(it.rate).toFixed(2),
+              `${it.gstRate}%`,
+              (Number(it.qty || 0) * Number(it.rate || 0)).toFixed(2)
+            ];
+          }),
+          styles: { fontSize: 8, cellPadding: 2.5 },
+          theme: 'grid',
+          headStyles: { fillColor: [29, 78, 216] }
+        });
 
-            return (
-                <div className="max-w-md mx-auto min-h-screen flex flex-col bg-gray-50 pb-10">
-                    <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50">
-                        <h1 className="font-black text-indigo-700 italic text-xl">TENDER MITRA</h1>
-                        <button onClick={() => setView(view === 'home' ? 'profile' : 'home')} className="bg-indigo-50 text-indigo-700 px-4 py-1 rounded-full text-xs font-bold">
-                            {view === 'home' ? 'My Details' : 'Back'}
-                        </button>
-                    </header>
+        const y = doc.lastAutoTable.finalY + 8;
+        doc.setFont(undefined, 'bold');
+        doc.text('Amount in words', 12, y);
+        doc.setFont(undefined, 'normal');
+        doc.text(numberToWords(calcTotals.grandTotal), 12, y + 5);
 
-                    <main className="flex-1 p-4">
-                        {view === 'home' ? (
-                            <div className="space-y-4">
-                                <div className="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-indigo-600">
-                                    <p className="text-xs font-bold text-gray-400 uppercase">Total Sales</p>
-                                    <h2 className="text-3xl font-black text-indigo-900">₹{invoices.reduce((a,b) => a + b.totals.grandTotal, 0).toLocaleString()}</h2>
-                                </div>
-                                <button onClick={() => setShowBillModal(true)} className="w-full bg-white h-24 rounded-3xl shadow-sm border flex items-center justify-center space-x-3 active:scale-95 transition-transform">
-                                    <div className="bg-green-100 p-3 rounded-full"><i className="fas fa-plus text-green-600"></i></div>
-                                    <span className="font-bold text-lg text-gray-700">Create New Invoice</span>
-                                </button>
-                                <h3 className="font-bold text-gray-800 pt-2">Recent Invoices</h3>
-                                {invoices.map(inv => (
-                                    <div key={inv.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
-                                        <div><p className="font-bold text-sm">{inv.meta.buyerName || 'Client'}</p><p className="text-[10px] text-gray-400 font-bold">{inv.meta.invoiceNo}</p></div>
-                                        <button onClick={() => generatePDF(inv.meta, inv.totals)} className="text-indigo-600 p-2"><i className="fas fa-download"></i></button>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="bg-white p-6 rounded-3xl shadow-lg space-y-4">
-                                <h2 className="font-bold text-xl border-b pb-2">Business Settings</h2>
-                                <div><label className="input-label">Company Name</label><input value={profile.companyName} onChange={e => handleProfileChange('companyName', e.target.value)} className="w-full border-b p-2 text-sm" /></div>
-                                <div><label className="input-label">GSTIN</label><input value={profile.gstin} onChange={e => handleProfileChange('gstin', e.target.value)} className="w-full border-b p-2 text-sm" /></div>
-                                <button onClick={() => setView('home')} className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Save Details</button>
-                            </div>
-                        )}
-                    </main>
+        doc.setFont(undefined, 'bold');
+        doc.text(`Taxable Value: ${formatCurrency(calcTotals.taxableValue)}`, 132, y);
+        doc.text(`GST Total: ${formatCurrency(calcTotals.gstTotal)}`, 132, y + 6);
+        doc.text(`Transport: ${formatCurrency(invoiceData.transportCharges)}`, 132, y + 12);
+        doc.setFontSize(12);
+        doc.text(`Grand Total: ${formatCurrency(calcTotals.grandTotal)}`, 132, y + 20);
 
-                    {showBillModal && (
-                        <div className="fixed inset-0 bg-black/60 z-[100] flex items-end">
-                            <div className="bg-white w-full rounded-t-[2.5rem] p-6 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl space-y-5">
-                                <div className="flex justify-between items-center border-b pb-4">
-                                    <h3 className="font-bold text-lg text-indigo-800">NEW INVOICE</h3>
-                                    <button onClick={() => setShowBillModal(false)} className="text-gray-300 text-3xl">&times;</button>
-                                </div>
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text('Bank Details', 12, y + 18);
+        doc.text(`${profile.bankName} | A/C: ${profile.accNo} | IFSC: ${profile.ifsc}`, 12, y + 24);
 
-                                {/* Buyer Details Section */}
-                                <div className="space-y-3">
-                                    <div className="bg-indigo-50/50 p-4 rounded-2xl space-y-3">
-                                        <div><label className="input-label">Buyer Name</label><input value={bill.buyerName} onChange={e => handleBillChange('buyerName', e.target.value)} className="w-full bg-white border rounded-lg p-2 text-sm" /></div>
-                                        <div><label className="input-label">Buyer GSTIN</label><input value={bill.buyerGSTIN} onChange={e => handleBillChange('buyerGSTIN', e.target.value)} className="w-full bg-white border rounded-lg p-2 text-sm" /></div>
-                                    </div>
+        doc.line(145, y + 35, 192, y + 35);
+        doc.text(profile.signatureName, 150, y + 41);
+        doc.text('Authorized Signature', 148, y + 46);
 
-                                    <p className="input-label pt-2">Item List</p>
-                                    {bill.items.map(it => (
-                                        <div key={it.id} className="bg-white p-4 rounded-2xl border-2 border-gray-100 space-y-3 relative shadow-sm">
-                                            {bill.items.length > 1 && (
-                                                <button onClick={() => setBill(p => ({...p, items: p.items.filter(x => x.id !== it.id)}))} className="absolute top-2 right-2 text-red-400 font-bold">&times;</button>
-                                            )}
-                                            
-                                            <div>
-                                                <label className="input-label">Item Description</label>
-                                                <input value={it.desc} onChange={e => handleItemChange(it.id, 'desc', e.target.value)} className="w-full border-b-2 border-indigo-100 p-1 text-sm font-semibold" />
-                                            </div>
+        doc.save(`${invoiceData.invoiceNo}.pdf`);
+      };
 
-                                            <div className="grid grid-cols-4 gap-2">
-                                                <div><label className="input-label text-[8px]">HSN</label><input value={it.hsn} onChange={e => handleItemChange(it.id, 'hsn', e.target.value)} className="w-full border rounded p-1 text-xs" /></div>
-                                                <div><label className="input-label text-[8px]">Qty</label><input type="number" value={it.qty} onChange={e => handleItemChange(it.id, 'qty', Number(e.target.value))} className="w-full border rounded p-1 text-xs" /></div>
-                                                <div><label className="input-label text-[8px]">Rate</label><input type="number" value={it.rate} onChange={e => handleItemChange(it.id, 'rate', Number(e.target.value))} className="w-full border rounded p-1 text-xs" /></div>
-                                                <div><label className="input-label text-[8px]">GST %</label>
-                                                    <select value={it.gstRate} onChange={e => handleItemChange(it.id, 'gstRate', Number(e.target.value))} className="w-full border rounded p-1 text-xs bg-white">
-                                                        <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <button onClick={() => setBill(p => ({...p, items: [...p.items, { id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]}))} className="w-full border-2 border-dashed border-indigo-200 text-indigo-600 p-2 rounded-xl text-xs font-bold">+ Add Item</button>
+      const saveInvoice = () => {
+        const newInv = { id: Date.now(), meta: bill, totals };
+        setInvoices(prev => [newInv, ...prev]);
+        generatePDF(bill, totals);
+        setShowInvoice(false);
+        setBill({
+          invoiceNo: 'INV-' + String(Date.now()).slice(-5),
+          date: new Date().toISOString().split('T')[0],
+          buyerName: '', buyerMobile: '', buyerGSTIN: '', buyerAddress: '', buyerFullAddress: '',
+          placeOfSupply: 'Uttar Pradesh', stateCode: '09', discount: 0, transportCharges: 0, items: [createItem()]
+        });
+      };
 
-                                    <div className="bg-indigo-900 text-white p-6 rounded-[2rem] flex justify-between items-center mt-6 shadow-xl">
-                                        <div><p className="text-[10px] opacity-60">Grand Total</p><h2 className="text-2xl font-black">₹{totals.grandTotal.toLocaleString()}</h2></div>
-                                        <button onClick={() => {
-                                            const newInv = { meta: bill, totals, id: Date.now() };
-                                            setInvoices([newInv, ...invoices]);
-                                            generatePDF(bill, totals);
-                                            setShowBillModal(false);
-                                        }} className="bg-yellow-400 text-indigo-900 px-6 py-3 rounded-xl font-black text-xs uppercase shadow-lg active:scale-95">Download</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+      const StatCard = ({ icon, title, value, tone='blue' }) => (
+        <div className="glass card rounded-[28px] p-5 bg-white/90">
+          <div className="flex items-center justify-between mb-4">
+            <span className={`pill ${tone==='green' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{title}</span>
+            <div className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center"><i className={icon}></i></div>
+          </div>
+          <div className="text-2xl font-extrabold tracking-tight">{value}</div>
+        </div>
+      );
+
+      return (
+        <div className="max-w-7xl mx-auto min-h-screen px-4 py-4 md:px-6 md:py-6">
+          <header className="glass card rounded-[28px] px-5 py-4 mb-5 sticky top-3 z-30">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg">
+                  <i className="fa-solid fa-file-invoice-dollar text-lg"></i>
                 </div>
-            );
-        }
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600">Tender Mitra</div>
+                  <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">Pro Billing Dashboard</h1>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button className="btn btn-soft" onClick={() => setView('settings')}>Seller Settings</button>
+                <button className="btn btn-primary" onClick={() => setShowInvoice(true)}><i className="fa-solid fa-plus mr-2"></i>New Invoice</button>
+              </div>
+            </div>
+          </header>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<TenderMitra />);
-    </script>
+          <main className="desktop-grid">
+            <aside className="space-y-4 mb-5 md:mb-0">
+              <StatCard icon="fa-solid fa-indian-rupee-sign" title="Total Sales" value={formatCurrency(invoices.reduce((sum, inv) => sum + inv.totals.grandTotal, 0))} />
+              <StatCard icon="fa-solid fa-receipt" title="Invoices" value={String(invoices.length)} tone="green" />
+
+              <div className="glass card rounded-[28px] p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold">Quick Seller Card</h2>
+                  <span className="pill bg-amber-100 text-amber-700">GST Ready</span>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div><div className="text-slate-400 text-xs uppercase font-bold">Business</div><div className="font-semibold">{profile.companyName}</div></div>
+                  <div><div className="text-slate-400 text-xs uppercase font-bold">GSTIN</div><div className="font-semibold">{profile.gstin}</div></div>
+                  <div><div className="text-slate-400 text-xs uppercase font-bold">Mobile</div><div className="font-semibold">{profile.mobile}</div></div>
+                  <div><div className="text-slate-400 text-xs uppercase font-bold">Address</div><div className="font-semibold">{profile.fullAddress}</div></div>
+                </div>
+              </div>
+            </aside>
+
+            <section className="space-y-4">
+              {view === 'dashboard' && (
+                <>
+                  <div className="glass card rounded-[28px] p-5 md:p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-bold">Recent Invoices</h2>
+                      <span className="text-sm text-slate-500">Download anytime</span>
+                    </div>
+                    <div className="space-y-3">
+                      {invoices.length === 0 ? (
+                        <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                          <div className="w-14 h-14 rounded-2xl bg-white mx-auto mb-4 flex items-center justify-center shadow"><i className="fa-solid fa-box-open text-slate-400 text-xl"></i></div>
+                          <div className="font-bold text-slate-700">No invoices yet</div>
+                          <div className="text-sm text-slate-500 mt-1">Create your first GST invoice with quantity, length, weight, density, cube, address and signature support.</div>
+                        </div>
+                      ) : invoices.map(inv => (
+                        <div key={inv.id} className="bg-white rounded-[22px] border border-slate-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                          <div>
+                            <div className="font-bold text-slate-900">{inv.meta.buyerName || 'Client'}</div>
+                            <div className="text-sm text-slate-500">{inv.meta.invoiceNo} • {inv.meta.date}</div>
+                            <div className="text-sm text-slate-500">{formatCurrency(inv.totals.grandTotal)}</div>
+                          </div>
+                          <button className="btn btn-secondary" onClick={() => generatePDF(inv.meta, inv.totals)}><i className="fa-solid fa-download mr-2"></i>PDF</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {view === 'settings' && (
+                <div className="glass card rounded-[28px] p-5 md:p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-lg font-bold">Seller Settings</h2>
+                    <button className="btn btn-secondary" onClick={() => fetchGSTDetails(profile.gstin, 'seller')}>Fetch by GST</button>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div><label className="label">Company Name</label><input className="input" value={profile.companyName} onChange={e => setProfile({...profile, companyName: e.target.value})} /></div>
+                    <div><label className="label">Owner / Contact Name</label><input className="input" value={profile.ownerName} onChange={e => setProfile({...profile, ownerName: e.target.value})} /></div>
+                    <div><label className="label">GSTIN</label><input className="input" value={profile.gstin} onChange={e => setProfile({...profile, gstin: e.target.value.toUpperCase()})} /></div>
+                    <div><label className="label">Mobile Number</label><input className="input" value={profile.mobile} onChange={e => setProfile({...profile, mobile: e.target.value})} /></div>
+                    <div><label className="label">State</label><input className="input" value={profile.state} onChange={e => setProfile({...profile, state: e.target.value})} /></div>
+                    <div><label className="label">State Code</label><input className="input" value={profile.stateCode} onChange={e => setProfile({...profile, stateCode: e.target.value})} /></div>
+                    <div className="md:col-span-2"><label className="label">Full Seller Address</label><textarea className="textarea" value={profile.fullAddress} onChange={e => setProfile({...profile, fullAddress: e.target.value, address: e.target.value})}></textarea></div>
+                    <div><label className="label">Bank Name</label><input className="input" value={profile.bankName} onChange={e => setProfile({...profile, bankName: e.target.value})} /></div>
+                    <div><label className="label">Account Number</label><input className="input" value={profile.accNo} onChange={e => setProfile({...profile, accNo: e.target.value})} /></div>
+                    <div><label className="label">IFSC</label><input className="input" value={profile.ifsc} onChange={e => setProfile({...profile, ifsc: e.target.value})} /></div>
+                    <div><label className="label">Signature Caption</label><input className="input" value={profile.signatureName} onChange={e => setProfile({...profile, signatureName: e.target.value})} /></div>
+                  </div>
+                </div>
+              )}
+            </section>
+          </main>
+
+          {showInvoice && (
+            <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-40 overflow-y-auto">
+              <div className="min-h-screen flex items-end md:items-center justify-center p-3 md:p-6">
+                <div className="w-full max-w-5xl glass card rounded-[32px] bg-white/95 p-4 md:p-6">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-5">
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">Create invoice</div>
+                      <h2 className="text-xl font-extrabold">Professional GST Invoice</h2>
+                    </div>
+                    <button className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-600" onClick={() => setShowInvoice(false)}><i className="fa-solid fa-xmark"></i></button>
+                  </div>
+
+                  <div className="grid-auto md:grid-cols-2">
+                    <div className="bg-slate-50 rounded-[24px] p-4 border border-slate-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold">Buyer Details</h3>
+                        <button className="btn btn-secondary" onClick={() => fetchGSTDetails(bill.buyerGSTIN, 'buyer')}>Fetch by GST</button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div><label className="label">Buyer GSTIN</label><input className="input" value={bill.buyerGSTIN} onChange={e => setBill({...bill, buyerGSTIN: e.target.value.toUpperCase()})} /></div>
+                        <div><label className="label">Buyer Name</label><input className="input" value={bill.buyerName} onChange={e => setBill({...bill, buyerName: e.target.value})} /></div>
+                        <div><label className="label">Mobile Number</label><input className="input" value={bill.buyerMobile} onChange={e => setBill({...bill, buyerMobile: e.target.value})} /></div>
+                        <div><label className="label">Place of Supply</label><input className="input" value={bill.placeOfSupply} onChange={e => setBill({...bill, placeOfSupply: e.target.value})} /></div>
+                        <div><label className="label">Full Buyer Address</label><textarea className="textarea" value={bill.buyerFullAddress} onChange={e => setBill({...bill, buyerFullAddress: e.target.value, buyerAddress: e.target.value})}></textarea></div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-[24px] p-4 border border-slate-200">
+                      <h3 className="font-bold mb-4">Invoice Info</h3>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div><label className="label">Invoice Number</label><input className="input" value={bill.invoiceNo} onChange={e => setBill({...bill, invoiceNo: e.target.value})} /></div>
+                        <div><label className="label">Date</label><input type="date" className="input" value={bill.date} onChange={e => setBill({...bill, date: e.target.value})} /></div>
+                        <div><label className="label">Discount</label><input type="number" className="input" value={bill.discount} onChange={e => setBill({...bill, discount: Number(e.target.value)})} /></div>
+                        <div><label className="label">Transport Charges</label><input type="number" className="input" value={bill.transportCharges} onChange={e => setBill({...bill, transportCharges: Number(e.target.value)})} /></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 bg-slate-50 rounded-[24px] p-4 border border-slate-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold">Item Details</h3>
+                      <button className="btn btn-soft" onClick={() => setBill({...bill, items: [...bill.items, createItem()]})}><i className="fa-solid fa-plus mr-2"></i>Add Item</button>
+                    </div>
+
+                    <div className="space-y-4 max-h-[42vh] overflow-y-auto pr-1">
+                      {bill.items.map((item, idx) => (
+                        <div key={item.id} className="bg-white rounded-[24px] border border-slate-200 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="pill bg-blue-100 text-blue-700">Item {idx + 1}</div>
+                            {bill.items.length > 1 && <button className="text-red-500 font-bold" onClick={() => setBill({...bill, items: bill.items.filter(x => x.id !== item.id)})}>Remove</button>}
+                          </div>
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <div className="md:col-span-3"><label className="label">Description</label><input className="input" value={item.desc} onChange={e => handleItemChange(item.id, 'desc', e.target.value)} /></div>
+                            <div><label className="label">HSN</label><input className="input" value={item.hsn} onChange={e => handleItemChange(item.id, 'hsn', e.target.value)} /></div>
+                            <div><label className="label">Quantity</label><input type="number" className="input" value={item.qty} onChange={e => handleItemChange(item.id, 'qty', Number(e.target.value))} /></div>
+                            <div><label className="label">Rate</label><input type="number" className="input" value={item.rate} onChange={e => handleItemChange(item.id, 'rate', Number(e.target.value))} /></div>
+                            <div><label className="label">Unit Type</label>
+                              <select className="select" value={item.unitType} onChange={e => handleItemChange(item.id, 'unitType', e.target.value)}>
+                                <option>Nos</option><option>Kg</option><option>Ton</option><option>Litre</option><option>Meter</option><option>Feet</option><option>Cubic Feet</option><option>Cubic Meter</option><option>CC Cube</option><option>Piece</option><option>Box</option><option>Other</option>
+                              </select>
+                            </div>
+                            <div><label className="label">Density</label><input className="input" value={item.density} onChange={e => handleItemChange(item.id, 'density', e.target.value)} placeholder="e.g. 7850 kg/m³" /></div>
+                            <div><label className="label">Length</label><input className="input" value={item.length} onChange={e => handleItemChange(item.id, 'length', e.target.value)} placeholder="e.g. 12 ft" /></div>
+                            <div><label className="label">Weight</label><input className="input" value={item.weight} onChange={e => handleItemChange(item.id, 'weight', e.target.value)} placeholder="e.g. 450 kg" /></div>
+                            <div><label className="label">CC Cube / Volume</label><input className="input" value={item.cube} onChange={e => handleItemChange(item.id, 'cube', e.target.value)} placeholder="e.g. 2.5 m³" /></div>
+                            <div><label className="label">GST %</label>
+                              <select className="select" value={item.gstRate} onChange={e => handleItemChange(item.id, 'gstRate', Number(e.target.value))}>
+                                <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
+                              </select>
+                            </div>
+                            {item.unitType === 'Other' && <div><label className="label">Custom Unit</label><input className="input" value={item.customUnit} onChange={e => handleItemChange(item.id, 'customUnit', e.target.value)} placeholder="Enter any unit" /></div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="sticky-action mt-5">
+                    <div className="rounded-[28px] bg-slate-900 text-white p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-2xl">
+                      <div className="grid grid-cols-2 md:flex gap-4 md:gap-8 text-sm">
+                        <div><div className="text-slate-400">Taxable</div><div className="font-bold text-base">{formatCurrency(totals.taxableValue)}</div></div>
+                        <div><div className="text-slate-400">GST</div><div className="font-bold text-base">{formatCurrency(totals.gstTotal)}</div></div>
+                        <div><div className="text-slate-400">Transport</div><div className="font-bold text-base">{formatCurrency(bill.transportCharges)}</div></div>
+                        <div><div className="text-slate-400">Grand Total</div><div className="font-extrabold text-xl">{formatCurrency(totals.grandTotal)}</div></div>
+                      </div>
+                      <button className="btn btn-primary" onClick={saveInvoice}><i className="fa-solid fa-file-arrow-down mr-2"></i>Save & Download PDF</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<TenderMitraApp />);
+  </script>
 </body>
 </html>
