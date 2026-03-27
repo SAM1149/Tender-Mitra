@@ -2,203 +2,214 @@
 <html lang="hi-EN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tender Mitra | Bill & Tender App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tender Mitra Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; overflow-x: hidden; }
+        .modal-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-100">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- MOCK DATA ---
-        const MOCK_TENDERS = [
-            { id: 1, title: "Road Construction - Narnaul", dept: "PWD Haryana", value: "₹45 Lakhs", date: "2026-04-10", cat: "Construction" },
-            { id: 2, title: "School Desk Supply", dept: "Education Dept", value: "₹12 Lakhs", date: "2026-04-05", cat: "Supply" },
-            { id: 3, title: "Milk Transport Service", dept: "Vita Dairy", value: "₹8 Lakhs", date: "2026-03-30", cat: "Transport" }
-        ];
-
-        // --- APP COMPONENT ---
         function TenderMitra() {
-            const [view, setView] = useState('home'); // home, bill, tender, reports
+            const [view, setView] = useState('home'); 
             const [invoices, setInvoices] = useState([]);
             const [showBillModal, setShowBillModal] = useState(false);
+            const [userProfile, setUserProfile] = useState({
+                name: "Your Business Name",
+                address: "Narnaul, Haryana",
+                gstin: "",
+                logo: null
+            });
 
-            // Invoice Form State
-            const [form, setForm] = useState({ name: '', item: '', price: '', gst: 18 });
+            // Bill Form State
+            const [form, setForm] = useState({
+                cust: '', item: '', qty: 1, price: 0, 
+                gst: 18, discount: 0, transport: 0
+            });
 
-            const calculateTotal = (p, g) => {
-                const price = parseFloat(p) || 0;
-                return price + (price * (g / 100));
+            // Calculation Logic
+            const calc = () => {
+                const subtotal = (form.qty * form.price) - form.discount;
+                const gstAmount = subtotal * (form.gst / 100);
+                return subtotal + gstAmount + Number(form.transport);
             };
 
-            const handleCreateBill = () => {
-                const newBill = { ...form, id: Date.now(), total: calculateTotal(form.price, form.gst), date: new Date().toLocaleDateString() };
+            const handleLogoUpload = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onloadend = () => setUserProfile({...userProfile, logo: reader.result});
+                if(file) reader.readAsDataURL(file);
+            };
+
+            const downloadPDF = (inv) => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(20);
+                doc.text(userProfile.name, 10, 20);
+                doc.setFontSize(10);
+                doc.text(`Address: ${userProfile.address}`, 10, 28);
+                doc.text(`GSTIN: ${userProfile.gstin}`, 10, 34);
+                
+                doc.line(10, 40, 200, 40);
+                doc.text(`Bill To: ${inv.cust}`, 10, 50);
+                doc.text(`Date: ${inv.date}`, 150, 50);
+
+                doc.text("Item", 10, 70);
+                doc.text("Qty", 70, 70);
+                doc.text("Rate", 100, 70);
+                doc.text("Total", 160, 70);
+                
+                doc.text(inv.item, 10, 80);
+                doc.text(String(inv.qty), 70, 80);
+                doc.text(`Rs.${inv.price}`, 100, 80);
+                doc.text(`Rs.${inv.total.toFixed(2)}`, 160, 80);
+
+                doc.text(`Other Charges: Rs.${inv.transport}`, 140, 100);
+                doc.text(`Discount: Rs.${inv.discount}`, 140, 110);
+                doc.setFontSize(14);
+                doc.text(`Final Total: Rs.${inv.total.toFixed(2)}`, 140, 125);
+
+                doc.save(`Bill_${inv.cust}_${Date.now()}.pdf`);
+            };
+
+            const saveBill = () => {
+                const newBill = { ...form, total: calc(), date: new Date().toLocaleDateString(), id: Date.now() };
                 setInvoices([newBill, ...invoices]);
+                downloadPDF(newBill);
                 setShowBillModal(false);
-                alert("Bill Ban Gaya! (Bill Created)");
             };
 
-            // --- COMPONENTS ---
-            
-            const Header = () => (
-                <div className="bg-indigo-700 text-white p-4 sticky top-0 z-10 shadow-md">
-                    <div className="flex justify-between items-center max-w-4xl mx-auto">
-                        <h1 className="font-bold text-xl tracking-tight italic">TENDER MITRA</h1>
-                        <div className="bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full text-xs font-bold">PRO</div>
-                    </div>
-                </div>
-            );
-
-            const BottomNav = () => (
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 safe-area-bottom shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:max-w-md md:mx-auto md:rounded-t-2xl">
-                    <NavBtn icon="fa-home" label="Home" active={view === 'home'} onClick={() => setView('home')} />
-                    <NavBtn icon="fa-file-invoice" label="Bill" active={view === 'bill'} onClick={() => setView('bill')} />
-                    <NavBtn icon="fa-gavel" label="Tender" active={view === 'tender'} onClick={() => setView('tender')} />
-                    <NavBtn icon="fa-chart-line" label="Report" active={view === 'reports'} onClick={() => setView('reports')} />
-                </div>
-            );
-
-            const NavBtn = ({ icon, label, active, onClick }) => (
-                <button onClick={onClick} className={`flex flex-col items-center gap-1 ${active ? 'text-indigo-700' : 'text-gray-400'}`}>
-                    <i className={`fas ${icon} text-lg`}></i>
-                    <span className="text-[10px] font-bold">{label}</span>
-                </button>
-            );
-
-            // --- VIEWS ---
-
-            const HomeView = () => (
-                <div className="p-4 space-y-6 animate-fadeIn">
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                        <h2 className="text-gray-500 text-sm font-semibold uppercase">Business Health</h2>
-                        <div className="text-3xl font-bold text-gray-800 mt-1">₹ 1,45,000</div>
-                        <p className="text-green-500 text-xs mt-1 font-bold">+12% is mahine (this month)</p>
+            // Views
+            const Home = () => (
+                <div className="p-4 space-y-4">
+                    <div className="bg-gradient-to-r from-indigo-600 to-blue-500 p-6 rounded-3xl text-white shadow-lg">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg opacity-80">Total Sales</h2>
+                                <h1 className="text-3xl font-bold">₹{invoices.reduce((a,b)=>a+b.total,0).toFixed(0)}</h1>
+                            </div>
+                            {userProfile.logo && <img src={userProfile.logo} className="w-16 h-16 rounded-full border-2 border-white object-cover" />}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <ActionCard color="bg-blue-500" icon="fa-plus" title="Bill Banaye" sub="Create Bill" onClick={() => setShowBillModal(true)} />
-                        <ActionCard color="bg-orange-500" icon="fa-search" title="Tender Dhundhe" sub="Find Tenders" onClick={() => setView('tender')} />
-                        <ActionCard color="bg-green-500" icon="fa-wallet" title="Kharcha" sub="Expenses" onClick={() => {}} />
-                        <ActionCard color="bg-indigo-600" icon="fa-file-pdf" title="Reports" sub="GST Summary" onClick={() => setView('reports')} />
+                        <button onClick={()=>setShowBillModal(true)} className="bg-white p-4 rounded-2xl border flex flex-col items-center shadow-sm active:bg-gray-50">
+                            <i className="fas fa-plus-circle text-2xl text-green-500 mb-2"></i>
+                            <span className="font-bold text-sm text-gray-700">Bill Banaye</span>
+                        </button>
+                        <button onClick={()=>setView('profile')} className="bg-white p-4 rounded-2xl border flex flex-col items-center shadow-sm active:bg-gray-50">
+                            <i className="fas fa-user-cog text-2xl text-blue-500 mb-2"></i>
+                            <span className="font-bold text-sm text-gray-700">Profile Set</span>
+                        </button>
                     </div>
 
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
-                        <p className="text-xs text-yellow-800 font-medium">
-                            <i className="fas fa-info-circle mr-2"></i>
-                            Tender Mitra does not file GST. Please consult a CA for legal filing.
-                        </p>
-                    </div>
-                </div>
-            );
-
-            const ActionCard = ({ color, icon, title, sub, onClick }) => (
-                <button onClick={onClick} className={`${color} p-4 rounded-2xl text-white text-left shadow-lg active:scale-95 transition-transform`}>
-                    <i className={`fas ${icon} text-xl mb-3`}></i>
-                    <div className="font-bold text-sm leading-tight">{title}</div>
-                    <div className="text-[10px] opacity-80">{sub}</div>
-                </button>
-            );
-
-            const TenderView = () => (
-                <div className="p-4 space-y-4">
-                    <h2 className="font-bold text-lg">Latest Government Tenders</h2>
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                        {['All', 'Construction', 'Transport', 'Supply'].map(c => (
-                            <span key={c} className="bg-white border px-4 py-1 rounded-full text-xs font-semibold whitespace-nowrap">{c}</span>
-                        ))}
-                    </div>
-                    {MOCK_TENDERS.map(t => (
-                        <div key={t.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                            <div className="text-xs font-bold text-indigo-600 mb-1">{t.dept}</div>
-                            <div className="font-bold text-gray-800 mb-2">{t.title}</div>
-                            <div className="flex justify-between text-xs text-gray-500 mb-3">
-                                <span><i className="fas fa-map-marker-alt mr-1"></i> {t.cat}</span>
-                                <span><i className="fas fa-calendar mr-1"></i> {t.date}</span>
+                    <h3 className="font-bold text-gray-800 mt-6">Purane Bills (Recent)</h3>
+                    {invoices.map(inv => (
+                        <div key={inv.id} className="bg-white p-4 rounded-xl border flex justify-between items-center">
+                            <div>
+                                <p className="font-bold text-gray-800">{inv.cust}</p>
+                                <p className="text-[10px] text-gray-400">{inv.date} | {inv.item}</p>
                             </div>
-                            <div className="flex justify-between items-center border-t pt-3">
-                                <span className="font-bold text-gray-900">{t.value}</span>
-                                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Apply Now</button>
-                            </div>
+                            <button onClick={()=>downloadPDF(inv)} className="text-indigo-600">
+                                <i className="fas fa-download text-lg"></i>
+                            </button>
                         </div>
                     ))}
                 </div>
             );
 
-            const BillView = () => (
+            const Profile = () => (
                 <div className="p-4 space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h2 className="font-bold text-lg">Recent Invoices</h2>
-                        <button onClick={() => setShowBillModal(true)} className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold">+ New Bill</button>
+                    <button onClick={()=>setView('home')} className="text-indigo-600 font-bold mb-4 italic underline">← Wapas Jaye (Back)</button>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
+                        <h2 className="font-bold text-xl mb-4 text-center">Business Profile</h2>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500">Logo Upload Karein</label>
+                            <input type="file" onChange={handleLogoUpload} className="w-full text-xs mt-1" />
+                        </div>
+                        <input value={userProfile.name} onChange={e=>setUserProfile({...userProfile, name: e.target.value})} className="w-full border p-3 rounded-lg text-sm" placeholder="Business Name" />
+                        <input value={userProfile.address} onChange={e=>setUserProfile({...userProfile, address: e.target.value})} className="w-full border p-3 rounded-lg text-sm" placeholder="Address" />
+                        <input value={userProfile.gstin} onChange={e=>setUserProfile({...userProfile, gstin: e.target.value})} className="w-full border p-3 rounded-lg text-sm" placeholder="GST Number (Optional)" />
+                        <button onClick={()=>setView('home')} className="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold">Details Save Karein</button>
                     </div>
-                    {invoices.length === 0 ? (
-                        <div className="text-center py-20 text-gray-400 text-sm">No bills yet. Click '+ New Bill'</div>
-                    ) : (
-                        invoices.map(inv => (
-                            <div key={inv.id} className="bg-white p-4 rounded-xl flex justify-between items-center border shadow-sm">
-                                <div>
-                                    <div className="font-bold">{inv.name}</div>
-                                    <div className="text-[10px] text-gray-500">{inv.date} | {inv.item}</div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="font-bold text-indigo-700">₹{inv.total.toFixed(2)}</div>
-                                    <button className="text-blue-500 text-[10px] font-bold underline">Download PDF</button>
-                                </div>
-                            </div>
-                        ))
-                    )}
                 </div>
             );
 
             return (
-                <div className="max-w-md mx-auto min-h-screen pb-24 relative bg-gray-50">
-                    <Header />
-                    
-                    {view === 'home' && <HomeView />}
-                    {view === 'bill' && <BillView />}
-                    {view === 'tender' && <TenderView />}
-                    {view === 'reports' && <div className="p-10 text-center">GST Report coming soon to PRO users.</div>}
+                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
+                    <div className="bg-white p-4 border-b sticky top-0 z-20 flex items-center justify-between">
+                        <h1 className="text-indigo-700 font-extrabold text-xl tracking-tighter">TENDER MITRA <span className="text-xs text-orange-500">PRO</span></h1>
+                        <i className="fas fa-bell text-gray-400"></i>
+                    </div>
 
-                    <BottomNav />
+                    {view === 'home' && <Home />}
+                    {view === 'profile' && <Profile />}
 
                     {/* BILL MODAL */}
                     {showBillModal && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-end animate-fadeIn">
-                            <div className="bg-white w-full rounded-t-3xl p-6 space-y-4 shadow-2xl">
-                                <div className="flex justify-between items-center border-b pb-3">
-                                    <h3 className="font-bold text-lg">Naya Bill Banaye</h3>
-                                    <button onClick={() => setShowBillModal(false)} className="text-gray-400 text-xl">&times;</button>
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-end">
+                            <div className="bg-white w-full rounded-t-[2.5rem] p-6 space-y-4 modal-up max-h-[90vh] overflow-y-auto shadow-2xl">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="font-bold text-xl">Naya Bill</h3>
+                                    <button onClick={()=>setShowBillModal(false)} className="bg-gray-100 px-3 py-1 rounded-full text-gray-400">&times;</button>
                                 </div>
-                                <div className="space-y-3">
-                                    <input placeholder="Party Name (Customer)" className="w-full p-3 border rounded-xl text-sm" onChange={e => setForm({...form, name: e.target.value})} />
-                                    <input placeholder="Maal/Service (Item)" className="w-full p-3 border rounded-xl text-sm" onChange={e => setForm({...form, item: e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <input placeholder="Rate (₹)" type="number" className="w-1/2 p-3 border rounded-xl text-sm" onChange={e => setForm({...form, price: e.target.value})} />
-                                        <select className="w-1/2 p-3 border rounded-xl text-sm font-bold" onChange={e => setForm({...form, gst: e.target.value})}>
-                                            <option value="18">GST 18%</option>
-                                            <option value="12">GST 12%</option>
-                                            <option value="5">GST 5%</option>
-                                            <option value="0">Zero GST</option>
-                                        </select>
+                                
+                                <input placeholder="Grahak Ka Naam (Customer)" className="w-full border p-3 rounded-xl text-sm bg-gray-50" onChange={e=>setForm({...form, cust: e.target.value})} />
+                                <input placeholder="Kaam Ka Naam (Item/Work)" className="w-full border p-3 rounded-xl text-sm bg-gray-50" onChange={e=>setForm({...form, item: e.target.value})} />
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 ml-1">Quantity</label>
+                                        <input type="number" value={form.qty} className="w-full border p-3 rounded-xl text-sm" onChange={e=>setForm({...form, qty: Number(e.target.value)})} />
                                     </div>
-                                    <div className="bg-indigo-50 p-4 rounded-xl flex justify-between items-center">
-                                        <span className="text-xs font-bold text-indigo-700">Total Bill:</span>
-                                        <span className="text-xl font-bold text-indigo-800">₹{calculateTotal(form.price, form.gst).toFixed(2)}</span>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 ml-1">Rate (Price)</label>
+                                        <input type="number" placeholder="₹" className="w-full border p-3 rounded-xl text-sm font-bold text-blue-600" onChange={e=>setForm({...form, price: Number(e.target.value)})} />
                                     </div>
-                                    <button onClick={handleCreateBill} className="w-full bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg">Save & Download PDF</button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="relative">
+                                        <label className="text-[10px] font-bold text-red-400 ml-1">Discount (-)</label>
+                                        <input type="number" placeholder="₹" className="w-full border p-3 rounded-xl text-sm" onChange={e=>setForm({...form, discount: Number(e.target.value)})} />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-green-600 ml-1">Transport Charges (+)</label>
+                                        <input type="number" placeholder="₹" className="w-full border p-3 rounded-xl text-sm" onChange={e=>setForm({...form, transport: Number(e.target.value)})} />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <select className="flex-1 border p-3 rounded-xl text-sm bg-gray-50 font-bold" onChange={e=>setForm({...form, gst: Number(e.target.value)})}>
+                                        <option value="18">GST 18%</option>
+                                        <option value="12">GST 12%</option>
+                                        <option value="5">GST 5%</option>
+                                        <option value="0">No GST</option>
+                                    </select>
+                                </div>
+
+                                <div className="bg-indigo-700 text-white p-5 rounded-2xl flex justify-between items-center">
+                                    <div>
+                                        <p className="text-[10px] opacity-70 italic font-medium">Final Total (Tax Included)</p>
+                                        <p className="text-2xl font-bold">₹{calc().toFixed(2)}</p>
+                                    </div>
+                                    <button onClick={saveBill} className="bg-white text-indigo-700 px-6 py-3 rounded-xl font-bold active:scale-90 transition-transform">
+                                        <i className="fas fa-file-pdf mr-2"></i>Download
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -209,13 +220,6 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<TenderMitra />);
-
-        // Simple Service Worker Registration for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ID0+IHsgcmV0dXJuOyB9KTs=');
-            });
-        }
     </script>
 </body>
 </html>
