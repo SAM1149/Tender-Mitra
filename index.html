@@ -2,1652 +2,254 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#1a3a2a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Tender Mitra - आपका व्यापार साथी</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaaS Billing System</title>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
-  :root {
-    --bg: #0f1f16;
-    --bg2: #162b1e;
-    --bg3: #1e3829;
-    --card: #1a3224;
-    --card2: #203d2d;
-    --accent: #2ecc71;
-    --accent2: #27ae60;
-    --accent3: #f39c12;
-    --accent4: #e74c3c;
-    --accent5: #3498db;
-    --text: #e8f5ec;
-    --text2: #a8d5b5;
-    --text3: #6aab7d;
-    --border: #2a4a35;
-    --gold: #f1c40f;
-    --radius: 16px;
-    --radius-sm: 10px;
-  }
+body { font-family: Arial; margin:0; background:#f4f6f9; }
+header { background:#1e3c72; color:#fff; padding:12px; text-align:center; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+.container { padding:10px; }
 
-  body {
-    font-family: 'Baloo 2', 'Noto Sans Devanagari', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+.card {
+  background:#fff;
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
 
-  /* ── LAYOUT ── */
-  .app { display: flex; min-height: 100vh; }
+input, select, button {
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+}
 
-  /* Sidebar */
-  .sidebar {
-    width: 240px;
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    z-index: 100;
-    transition: transform 0.3s;
-  }
+button { background:#3498db; color:#fff; border:none; }
 
-  .sidebar-logo {
-    padding: 20px 20px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 10px;
-  }
-
-  .logo-icon {
-    width: 40px; height: 40px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-  }
-
-  .logo-text { line-height: 1.2; }
-  .logo-text .t1 { font-size: 16px; font-weight: 800; color: var(--accent); }
-  .logo-text .t2 { font-size: 11px; color: var(--text3); }
-
-  .sidebar-nav { padding: 16px 12px; flex: 1; }
-  .sidebar-nav .label {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
-    color: var(--text3); padding: 0 8px; margin-bottom: 8px; margin-top: 16px;
-  }
-  .sidebar-nav .label:first-child { margin-top: 0; }
-
-  .nav-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 14px; border-radius: var(--radius-sm);
-    cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 500;
-    transition: all 0.2s; margin-bottom: 2px;
-    border: 1px solid transparent;
-  }
-  .nav-item:hover { background: var(--bg3); color: var(--text); }
-  .nav-item.active {
-    background: linear-gradient(135deg, rgba(46,204,113,0.15), rgba(46,204,113,0.08));
-    color: var(--accent); border-color: rgba(46,204,113,0.2);
-  }
-  .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
-
-  .sidebar-footer {
-    padding: 16px; border-top: 1px solid var(--border);
-    font-size: 12px; color: var(--text3);
-  }
-  .plan-badge {
-    background: linear-gradient(135deg, #f39c12, #e67e22);
-    color: white; padding: 3px 8px; border-radius: 20px;
-    font-size: 10px; font-weight: 700; display: inline-block; margin-bottom: 8px;
-  }
-
-  /* Main */
-  .main {
-    margin-left: 240px;
-    flex: 1;
-    min-height: 100vh;
-    background: var(--bg);
-  }
-
-  .topbar {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 50;
-  }
-
-  .topbar-title { font-size: 18px; font-weight: 700; color: var(--text); }
-  .topbar-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
-
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-
-  .user-chip {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--bg3); padding: 7px 14px; border-radius: 30px;
-    border: 1px solid var(--border); cursor: pointer;
-    font-size: 13px; font-weight: 600;
-  }
-
-  .avatar {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700;
-  }
-
-  .page { padding: 24px; max-width: 1200px; }
-
-  /* Cards */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
-
-  .card-sm {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 16px;
-  }
-
-  /* Grid */
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-
-  /* Quick action cards */
-  .action-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px 20px;
-    cursor: pointer;
-    transition: all 0.25s;
-    display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
-    min-height: 120px;
-    position: relative;
-    overflow: hidden;
-  }
-  .action-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: var(--card-accent, var(--accent));
-  }
-  .action-card:hover {
-    border-color: var(--card-accent, var(--accent));
-    transform: translateY(-2px);
-    background: var(--card2);
-  }
-  .action-card .ac-icon {
-    font-size: 32px;
-    width: 52px; height: 52px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .action-card .ac-title { font-size: 16px; font-weight: 700; color: var(--text); }
-  .action-card .ac-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
-
-  /* Stats */
-  .stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
-  .stat-label { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
-  .stat-value { font-size: 26px; font-weight: 800; color: var(--text); }
-  .stat-delta { font-size: 12px; margin-top: 4px; }
-  .delta-up { color: var(--accent); }
-  .delta-down { color: var(--accent4); }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 12px 20px; border-radius: var(--radius-sm); border: none;
-    font-family: inherit; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; min-height: 44px;
-    text-decoration: none;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: white;
-  }
-  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn-secondary {
-    background: var(--bg3); color: var(--text2);
-    border: 1px solid var(--border);
-  }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { background: var(--accent4); color: white; }
-  .btn-gold {
-    background: linear-gradient(135deg, var(--gold), #e67e22);
-    color: #1a1a1a; font-weight: 700;
-  }
-  .btn-sm { padding: 8px 14px; font-size: 12px; min-height: 34px; }
-  .btn-full { width: 100%; }
-
-  /* Form */
-  .form-group { margin-bottom: 16px; }
-  .form-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; }
-  .form-input, .form-select {
-    width: 100%; padding: 12px 14px;
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); color: var(--text);
-    font-family: inherit; font-size: 14px; outline: none;
-    transition: border-color 0.2s;
-  }
-  .form-input:focus, .form-select:focus { border-color: var(--accent); }
-  .form-select option { background: var(--bg2); }
-  .form-input::placeholder { color: var(--text3); }
-
-  /* Table */
-  .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th {
-    background: var(--bg3); color: var(--text3);
-    padding: 10px 14px; text-align: left;
-    font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border);
-  }
-  td {
-    padding: 12px 14px; border-bottom: 1px solid rgba(42,74,53,0.4);
-    color: var(--text2);
-  }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg3); }
-
-  /* Badge */
-  .badge {
-    display: inline-flex; align-items: center;
-    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
-  }
-  .badge-green { background: rgba(46,204,113,0.15); color: var(--accent); }
-  .badge-yellow { background: rgba(243,156,18,0.15); color: var(--accent3); }
-  .badge-red { background: rgba(231,76,60,0.15); color: var(--accent4); }
-  .badge-blue { background: rgba(52,152,219,0.15); color: var(--accent5); }
-
-  /* Section header */
-  .section-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .section-title { font-size: 16px; font-weight: 700; color: var(--text); }
-  .section-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
-
-  /* Tender card */
-  .tender-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px;
-    transition: all 0.2s;
-    cursor: pointer;
-  }
-  .tender-card:hover { border-color: var(--accent5); }
-  .tender-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.4; }
-  .tender-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-  .tender-meta span {
-    font-size: 11px; color: var(--text3);
-    display: flex; align-items: center; gap: 4px;
-  }
-  .tender-footer { display: flex; align-items: center; justify-content: space-between; }
-  .tender-value { font-size: 16px; font-weight: 800; color: var(--accent); }
-  .deadline-urgent { color: var(--accent4); }
-
-  /* Disclaimer */
-  .disclaimer {
-    background: rgba(243,156,18,0.08);
-    border: 1px solid rgba(243,156,18,0.25);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px; font-size: 12px; color: var(--accent3);
-    display: flex; gap: 10px; align-items: flex-start;
-  }
-
-  /* Toast */
-  .toast {
-    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: var(--accent); color: white;
-    padding: 12px 24px; border-radius: 30px;
-    font-size: 14px; font-weight: 600;
-    z-index: 999; display: none;
-    animation: slideUp 0.3s ease;
-  }
-  @keyframes slideUp {
-    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-    to { transform: translateX(-50%) translateY(0); opacity: 1; }
-  }
-
-  /* Bottom Nav (mobile) */
-  .bottom-nav {
-    display: none;
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--bg2); border-top: 1px solid var(--border);
-    padding: 6px 0 8px; z-index: 100;
-  }
-  .bottom-nav-inner {
-    display: flex; justify-content: space-around;
-  }
-  .bnav-item {
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 6px 16px; cursor: pointer; border-radius: 10px;
-    transition: all 0.2s; color: var(--text3); font-size: 11px; font-weight: 500;
-  }
-  .bnav-item.active { color: var(--accent); }
-  .bnav-item .bnav-icon { font-size: 20px; }
-
-  /* Modal */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    z-index: 200; display: none; align-items: center; justify-content: center;
-    padding: 16px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 24px;
-    width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-  }
-  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
-  .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
-
-  /* Login Screen */
-  .login-screen {
-    min-height: 100vh;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-  }
-  .login-box {
-    width: 100%; max-width: 380px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 20px; padding: 36px 28px;
-    text-align: center;
-  }
-  .login-logo {
-    width: 64px; height: 64px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 16px; margin: 0 auto 20px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32px;
-  }
-  .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 16px 0; }
-  .otp-input {
-    width: 48px; height: 56px; text-align: center;
-    background: var(--bg3); border: 2px solid var(--border);
-    border-radius: 10px; color: var(--text);
-    font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
-    outline: none;
-  }
-  .otp-input:focus { border-color: var(--accent); }
-
-  /* Invoice preview */
-  .invoice-preview {
-    background: white; color: #111; padding: 30px;
-    border-radius: var(--radius); font-size: 12px;
-    line-height: 1.6;
-  }
-  .inv-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-  .inv-title { font-size: 20px; font-weight: 800; color: #1a3a2a; }
-  .inv-divider { border: none; border-top: 2px solid #1a3a2a; margin: 12px 0; }
-  .inv-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-  .inv-table th { background: #1a3a2a; color: white; padding: 8px; font-size: 11px; }
-  .inv-table td { padding: 8px; border-bottom: 1px solid #eee; }
-  .inv-total { text-align: right; margin-top: 12px; }
-  .inv-total .total-row { display: flex; justify-content: space-between; padding: 4px 0; }
-  .inv-total .grand { font-size: 15px; font-weight: 800; border-top: 2px solid #1a3a2a; padding-top: 8px; margin-top: 4px; }
-
-  /* Divider */
-  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-
-  /* Progress bar */
-  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg2); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  /* Tag */
-  .tag {
-    display: inline-block; padding: 4px 10px; border-radius: 6px;
-    font-size: 11px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s;
-    background: var(--bg3); color: var(--text3);
-    border: 1px solid var(--border);
-  }
-  .tag.selected {
-    background: rgba(46,204,113,0.15); color: var(--accent);
-    border-color: var(--accent);
-  }
-
-  /* Chart bar */
-  .chart-bar-wrap { display: flex; align-items: flex-end; gap: 8px; height: 100px; }
-  .chart-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .chart-bar {
-    width: 100%; background: var(--accent); border-radius: 4px 4px 0 0;
-    transition: height 0.5s ease;
-    min-height: 4px;
-  }
-  .chart-bar.expense { background: var(--accent4); }
-  .chart-label { font-size: 10px; color: var(--text3); }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .main { margin-left: 0; padding-bottom: 70px; }
-    .bottom-nav { display: block; }
-    .grid2, .grid3, .grid4 { grid-template-columns: 1fr 1fr; }
-    .topbar { padding: 12px 16px; }
-    .page { padding: 16px; }
-    .action-card { min-height: 100px; padding: 18px 14px; }
-    .action-card .ac-icon { font-size: 26px; width: 44px; height: 44px; }
-    .action-card .ac-title { font-size: 14px; }
-    .grid4 { grid-template-columns: 1fr 1fr; }
-  }
-
-  @media (max-width: 480px) {
-    .grid2, .grid3, .grid4 { grid-template-columns: 1fr 1fr; }
-  }
-
-  /* Animations */
-  .fade-in { animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .pulse {
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  /* Sidebar overlay for mobile */
-  .sidebar-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5); z-index: 99;
-  }
-  .sidebar-overlay.open { display: block; }
-
-  /* Income vs expense pills */
-  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .pill {
-    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    cursor: pointer; border: 1px solid transparent; transition: all 0.2s;
-  }
-  .pill.inc { background: rgba(46,204,113,0.1); color: var(--accent); border-color: rgba(46,204,113,0.2); }
-  .pill.exp { background: rgba(231,76,60,0.1); color: var(--accent4); border-color: rgba(231,76,60,0.2); }
-  .pill.neu { background: var(--bg3); color: var(--text3); border-color: var(--border); }
-  .pill:hover { opacity: 0.8; }
-
-  /* Empty state */
-  .empty-state {
-    text-align: center; padding: 40px 20px;
-    color: var(--text3); font-size: 14px;
-  }
-  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+th, td {
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
 </style>
 </head>
+
 <body>
 
-<div id="app"></div>
-<div id="toast" class="toast"></div>
+<header>SaaS Billing System</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login">
+<div class="card">
+<h3>Login</h3>
+<input id="username" placeholder="Enter name">
+<button onclick="login()">Login</button>
+</div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+
+<div class="card">
+<h3>Create Invoice</h3>
+
+<p><b>Invoice No:</b> <span id="invNo"></span></p>
+
+<input id="customer" placeholder="Customer Name">
+
+<input id="pname" placeholder="Product">
+<input id="pprice" placeholder="Price">
+
+<select id="pgst">
+<option value="5">5%</option>
+<option value="12">12%</option>
+<option value="18">18%</option>
+</select>
+
+<button onclick="addItem()">Add Item</button>
+
+<table>
+<thead>
+<tr>
+<th>Item</th><th>Price</th><th>GST</th><th>Total</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<!-- EXTRA -->
+<h4>Adjustments</h4>
+
+<input id="discount" placeholder="Discount (₹ or %)">
+<input id="transport" placeholder="Transport Charges">
+<input id="other" placeholder="Other Charges">
+
+<p><b>Final Total: ₹ <span id="finalTotal">0</span></b></p>
+
+<button onclick="generatePDF()">Download Invoice</button>
+
+</div>
+
+<!-- PROFILE -->
+<div class="card">
+<h3>Profile</h3>
+
+<input type="file" id="logoUpload">
+<img id="logoPreview" width="80">
+
+<input type="file" id="signUpload">
+<canvas id="canvas" width="250" height="100"></canvas>
+
+<button onclick="saveProfile()">Save</button>
+</div>
+
+</div>
+</div>
 
 <script>
-// ─── DATA STORE ───────────────────────────────────────────────────────────────
-const Store = {
-  user: {
-    name: 'Ramesh Kumar',
-    phone: '9876543210',
-    business: 'Construction & Supply',
-    gst: '27AAPFU0939F1ZV',
-    plan: 'Free'
-  },
-  invoices: [
-    { id: 'INV-001', customer: 'Delhi Metro Rail Corp', date: '2025-06-10', items: [{name:'Steel Rods', qty:100, price:850, gst:18}], discount: 0, transport: 500, status: 'Paid' },
-    { id: 'INV-002', customer: 'Bharat Heavy Elect.', date: '2025-06-08', items: [{name:'Cement Bags', qty:200, price:420, gst:5}], discount: 1000, transport: 2000, status: 'Pending' },
-    { id: 'INV-003', customer: 'NHAI Contractor', date: '2025-06-05', items: [{name:'Bitumen Drums', qty:50, price:5200, gst:12}], discount: 2000, transport: 0, status: 'Paid' },
-  ],
-  expenses: [
-    { id: 'EXP-001', category: 'Fuel', amount: 4500, date: '2025-06-12', note: 'Truck diesel' },
-    { id: 'EXP-002', category: 'Labour', amount: 12000, date: '2025-06-11', note: 'Daily wages' },
-    { id: 'EXP-003', category: 'Material', amount: 8200, date: '2025-06-10', note: 'Iron fittings' },
-    { id: 'EXP-004', category: 'Misc', amount: 1500, date: '2025-06-09', note: 'Office supplies' },
-    { id: 'EXP-005', category: 'Fuel', amount: 3800, date: '2025-06-08', note: 'Generator fuel' },
-  ],
-  tenders: [
-    { id: 'T001', title: 'Construction of NH-48 Bypass Road – Phase 2', dept: 'NHAI', location: 'Haryana', deadline: '2025-07-15', value: '₹2.4 Cr', category: 'Construction', status: 'Open', url: 'https://eprocure.gov.in' },
-    { id: 'T002', title: 'Supply of Construction Material to PWD Sites', dept: 'PWD Maharashtra', location: 'Maharashtra', deadline: '2025-07-08', value: '₹45 Lakh', category: 'Supply', status: 'Open', url: 'https://eprocure.gov.in' },
-    { id: 'T003', title: 'Truck Transportation for Food Corporation Warehouses', dept: 'FCI', location: 'Uttar Pradesh', deadline: '2025-07-20', value: '₹80 Lakh', category: 'Transport', status: 'Open', url: 'https://gem.gov.in' },
-    { id: 'T004', title: 'Electrical Wiring – Govt School Campus Upgradation', dept: 'CPWD', location: 'Delhi', deadline: '2025-07-05', value: '₹22 Lakh', category: 'Electrical', status: 'Open', url: 'https://eprocure.gov.in' },
-    { id: 'T005', title: 'Manpower Supply – Cleaning & Sanitation Services', dept: 'NMMC', location: 'Maharashtra', deadline: '2025-07-25', value: '₹35 Lakh', category: 'Manpower', status: 'Open', url: 'https://gem.gov.in' },
-    { id: 'T006', title: 'Supply of Electrical Cables and Fittings', dept: 'BSNL', location: 'Rajasthan', deadline: '2025-07-12', value: '₹60 Lakh', category: 'Electrical', status: 'Open', url: 'https://gem.gov.in' },
-    { id: 'T007', title: 'Bridge Construction over River Yamuna', dept: 'Delhi PWD', location: 'Delhi', deadline: '2025-08-01', value: '₹5.1 Cr', category: 'Construction', status: 'Open', url: 'https://eprocure.gov.in' },
-    { id: 'T008', title: 'Cold Chain Transport – Vaccines Distribution', dept: 'Health Dept UP', location: 'Uttar Pradesh', deadline: '2025-07-18', value: '₹28 Lakh', category: 'Transport', status: 'Open', url: 'https://gem.gov.in' },
-  ],
-  savedTenders: ['T003'],
-  currentPage: 'home',
-  loggedIn: true,
-  loginStep: 'phone', // phone, otp
-  phone: '',
-};
 
-function calcInvoice(inv) {
-  let subtotal = 0, gstAmount = 0;
-  (inv.items||[]).forEach(it => {
-    const base = (it.qty||0) * (it.price||0);
-    subtotal += base;
-    gstAmount += base * ((it.gst||0)/100);
+// LOGIN
+function login(){
+  localStorage.setItem("user",username.value);
+  location.reload();
+}
+if(localStorage.getItem("user")){
+  login.style.display="none";
+  app.style.display="block";
+}
+
+// INVOICE NUMBER
+let inv = localStorage.getItem("inv") || 1001;
+invNo.innerText = inv;
+localStorage.setItem("inv", ++inv);
+
+// ITEMS
+let items=[];
+
+function addItem(){
+  let name=pname.value;
+  let price=parseFloat(pprice.value);
+  let gst=parseFloat(pgst.value);
+
+  let gstAmt=price*gst/100;
+  let total=price+gstAmt;
+
+  items.push({name,price,gst,total});
+  render();
+}
+
+function render(){
+  let html="";
+  let sum=0;
+
+  items.forEach(i=>{
+    html+=`<tr>
+      <td>${i.name}</td>
+      <td>₹${i.price}</td>
+      <td>${i.gst}%</td>
+      <td>₹${i.total.toFixed(2)}</td>
+    </tr>`;
+    sum+=i.total;
   });
-  const discount = inv.discount||0;
-  const transport = inv.transport||0;
-  const total = subtotal - discount + transport + gstAmount;
-  return { subtotal, gstAmount, discount, transport, total };
-}
 
-function formatCurrency(n) {
-  return '₹' + Number(n).toLocaleString('en-IN');
-}
+  tbody.innerHTML=html;
 
-function daysLeft(deadline) {
-  const d = new Date(deadline) - new Date();
-  return Math.ceil(d / (1000*60*60*24));
-}
+  // EXTRA CALC
+  let disc = discount.value || 0;
+  let trans = parseFloat(transport.value)||0;
+  let otherC = parseFloat(other.value)||0;
 
-function showToast(msg, duration=2500) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', duration);
-}
-
-// ─── RENDER ENGINE ────────────────────────────────────────────────────────────
-function navigate(page) {
-  Store.currentPage = page;
-  render();
-  window.scrollTo(0,0);
-}
-
-function render() {
-  document.getElementById('app').innerHTML = buildApp();
-  attachEvents();
-}
-
-function buildApp() {
-  if (!Store.loggedIn) return buildLogin();
-  return `
-    <div class="app">
-      ${buildSidebar()}
-      <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-      <main class="main">
-        ${buildTopbar()}
-        <div class="page fade-in">
-          ${buildPage()}
-        </div>
-      </main>
-    </div>
-    <nav class="bottom-nav">
-      <div class="bottom-nav-inner">
-        ${['home','billing','tenders','reports','expenses'].map(p => `
-          <div class="bnav-item ${Store.currentPage===p?'active':''}" onclick="navigate('${p}')">
-            <span class="bnav-icon">${{home:'🏠',billing:'🧾',tenders:'📋',reports:'📊',expenses:'💸'}[p]}</span>
-            <span>${{home:'Home',billing:'Bill',tenders:'Tender',reports:'Report',expenses:'Kharcha'}[p]}</span>
-          </div>
-        `).join('')}
-      </div>
-    </nav>
-  `;
-}
-
-function buildSidebar() {
-  const navItems = [
-    { page:'home', icon:'🏠', label:'Dashboard' },
-    { page:'billing', icon:'🧾', label:'Bill Banaye' },
-    { page:'expenses', icon:'💸', label:'Kharcha Likhe' },
-    { page:'tenders', icon:'📋', label:'Tender Dhundhe' },
-    { page:'reports', icon:'📊', label:'Reports Dekhe' },
-    { page:'profile', icon:'👤', label:'My Profile' },
-  ];
-  return `
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon">🤝</div>
-      <div class="logo-text">
-        <div class="t1">Tender Mitra</div>
-        <div class="t2">आपका व्यापार साथी</div>
-      </div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="label">मुख्य मेनू</div>
-      ${navItems.map(n => `
-        <div class="nav-item ${Store.currentPage===n.page?'active':''}" onclick="navigate('${n.page}')">
-          <span class="icon">${n.icon}</span>
-          <span>${n.label}</span>
-        </div>
-      `).join('')}
-    </nav>
-    <div class="sidebar-footer">
-      <div class="plan-badge">FREE PLAN</div>
-      <div>5/10 invoices used</div>
-      <div style="margin-top:8px">
-        <button class="btn btn-gold btn-sm btn-full" onclick="navigate('upgrade')">⭐ Upgrade to Pro</button>
-      </div>
-    </div>
-  </aside>`;
-}
-
-function buildTopbar() {
-  const titles = {
-    home: {t:'Dashboard', s:'Aaj ka overview 📅'},
-    billing: {t:'Bill Banaye 🧾', s:'Invoice banaye aur PDF download karein'},
-    expenses: {t:'Kharcha Tracker 💸', s:'Daily kharcha record karein'},
-    tenders: {t:'Tender Mitra 📋', s:'Sarkari tenders dhundhe — updated every 6 hrs'},
-    reports: {t:'Reports & GST 📊', s:'Sales summary aur ITR-ready data'},
-    profile: {t:'My Profile 👤', s:'Aapki account details'},
-    upgrade: {t:'Pro Upgrade ⭐', s:'Unlimited features unlock karein'},
-  };
-  const info = titles[Store.currentPage] || {t:'Tender Mitra', s:''};
-  return `
-  <div class="topbar">
-    <div style="display:flex;align-items:center;gap:12px">
-      <button class="btn btn-secondary btn-sm" id="menuBtn" style="display:none;padding:8px 10px" onclick="toggleSidebar()">☰</button>
-      <div>
-        <div class="topbar-title">${info.t}</div>
-        <div class="topbar-sub">${info.s}</div>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <div class="user-chip" onclick="navigate('profile')">
-        <div class="avatar">${Store.user.name[0]}</div>
-        <span>${Store.user.name.split(' ')[0]}</span>
-      </div>
-    </div>
-  </div>`;
-}
-
-function buildPage() {
-  switch(Store.currentPage) {
-    case 'home': return buildHome();
-    case 'billing': return buildBilling();
-    case 'expenses': return buildExpenses();
-    case 'tenders': return buildTenders();
-    case 'reports': return buildReports();
-    case 'profile': return buildProfile();
-    case 'upgrade': return buildUpgrade();
-    default: return buildHome();
+  if(disc.includes("%")){
+    disc = sum * parseFloat(disc)/100;
+  } else {
+    disc = parseFloat(disc)||0;
   }
+
+  let final = sum - disc + trans + otherC;
+  finalTotal.innerText = final.toFixed(2);
 }
 
-// ─── HOME ─────────────────────────────────────────────────────────────────────
-function buildHome() {
-  const totalIncome = Store.invoices.reduce((s,inv) => s + calcInvoice(inv).total, 0);
-  const totalExp = Store.expenses.reduce((s,e) => s + e.amount, 0);
-  const netProfit = totalIncome - totalExp;
-  const months = ['Jan','Feb','Mar','Apr','May','Jun'];
-  const incomeData = [18000, 42000, 31000, 56000, 38000, totalIncome];
-  const maxVal = Math.max(...incomeData);
-
-  return `
-  <div style="margin-bottom:20px">
-    <div style="font-size:14px;color:var(--text3)">Namaste 🙏 <strong style="color:var(--text)">${Store.user.name}</strong></div>
-    <div style="font-size:12px;color:var(--text3);margin-top:2px">${Store.user.business}</div>
-  </div>
-
-  <div class="grid4" style="margin-bottom:20px">
-    <div class="stat-card">
-      <div class="stat-label">📈 Total Income</div>
-      <div class="stat-value">${formatCurrency(totalIncome)}</div>
-      <div class="stat-delta delta-up">↑ This month</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">📉 Total Expenses</div>
-      <div class="stat-value" style="color:var(--accent4)">${formatCurrency(totalExp)}</div>
-      <div class="stat-delta delta-down">This month</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">💰 Net Profit</div>
-      <div class="stat-value" style="color:${netProfit>0?'var(--accent)':'var(--accent4)'}">${formatCurrency(netProfit)}</div>
-      <div class="stat-delta ${netProfit>0?'delta-up':'delta-down'}">${netProfit>0?'Profit in green!':'Check expenses'}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">📋 Active Tenders</div>
-      <div class="stat-value">${Store.tenders.length}</div>
-      <div class="stat-delta delta-up">↑ 2 new today</div>
-    </div>
-  </div>
-
-  <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px">⚡ Quick Actions</div>
-  <div class="grid2" style="margin-bottom:20px">
-    <div class="action-card" style="--card-accent:#2ecc71" onclick="navigate('billing')">
-      <div class="ac-icon">🧾</div>
-      <div>
-        <div class="ac-title">Bill Banaye</div>
-        <div class="ac-sub">Invoice + PDF – 1 minute mein</div>
-      </div>
-    </div>
-    <div class="action-card" style="--card-accent:#3498db" onclick="navigate('tenders')">
-      <div class="ac-icon">📋</div>
-      <div>
-        <div class="ac-title">Tender Dhundhe</div>
-        <div class="ac-sub">Fresh sarkari tenders aaj ke</div>
-      </div>
-    </div>
-    <div class="action-card" style="--card-accent:#e74c3c" onclick="navigate('expenses')">
-      <div class="ac-icon">💸</div>
-      <div>
-        <div class="ac-title">Kharcha Likhe</div>
-        <div class="ac-sub">Fuel, labour, material – sab yahan</div>
-      </div>
-    </div>
-    <div class="action-card" style="--card-accent:#f39c12" onclick="navigate('reports')">
-      <div class="ac-icon">📊</div>
-      <div>
-        <div class="ac-title">Reports Dekhe</div>
-        <div class="ac-sub">GST summary + ITR ready data</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid2" style="gap:16px">
-    <div class="card">
-      <div class="section-header">
-        <div>
-          <div class="section-title">📊 Income Chart</div>
-          <div class="section-sub">Last 6 months</div>
-        </div>
-      </div>
-      <div class="chart-bar-wrap">
-        ${months.map((m,i) => `
-          <div class="chart-bar-col">
-            <div class="chart-bar" style="height:${Math.round((incomeData[i]/maxVal)*90)}px"></div>
-            <div class="chart-label">${m}</div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-header">
-        <div>
-          <div class="section-title">🕐 Recent Invoices</div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="navigate('billing')">View All</button>
-      </div>
-      ${Store.invoices.slice(0,3).map(inv => {
-        const c = calcInvoice(inv);
-        return `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text)">${inv.id}</div>
-            <div style="font-size:11px;color:var(--text3)">${inv.customer.substring(0,25)}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:13px;font-weight:700;color:var(--accent)">${formatCurrency(c.total)}</div>
-            <span class="badge ${inv.status==='Paid'?'badge-green':'badge-yellow'}">${inv.status}</span>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>
-
-  <div class="card" style="margin-top:16px">
-    <div class="section-header">
-      <div>
-        <div class="section-title">🔥 Hot Tenders Today</div>
-        <div class="section-sub">Deadline approaching — jaldi karein!</div>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="navigate('tenders')">All Tenders</button>
-    </div>
-    ${Store.tenders.slice(0,3).map(t => {
-      const dl = daysLeft(t.deadline);
-      return `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
-        <div style="flex:1;margin-right:12px">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${t.title.substring(0,55)}...</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px">📍 ${t.location} • 🏛 ${t.dept}</div>
-        </div>
-        <div style="text-align:right;min-width:100px">
-          <div style="font-size:14px;font-weight:700;color:var(--accent)">${t.value}</div>
-          <div style="font-size:11px;color:${dl<7?'var(--accent4)':'var(--text3)'}">${dl}d left</div>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
-}
-
-// ─── BILLING ──────────────────────────────────────────────────────────────────
-let newInvoice = {
-  customer:'', service:'', qty:1, price:0, gstRate:18,
-  discount:0, transport:0, items:[]
+// PROFILE
+let logo="",sign="";
+logoUpload.onchange=e=>{
+  let r=new FileReader();
+  r.onload=ev=>{
+    logo=ev.target.result;
+    logoPreview.src=logo;
+  };
+  r.readAsDataURL(e.target.files[0]);
 };
 
-function buildBilling() {
-  return `
-  <div class="grid2" style="gap:16px;align-items:start">
-    <!-- Invoice Form -->
-    <div>
-      <div class="card" style="margin-bottom:16px">
-        <div class="section-title" style="margin-bottom:16px">✏️ Naya Bill Banaye</div>
-        
-        <div class="form-group">
-          <label class="form-label">👤 Customer Name *</label>
-          <input class="form-input" id="inv_customer" placeholder="Customer ka naam" value="">
-        </div>
-        <div class="form-group">
-          <label class="form-label">📦 Product / Service *</label>
-          <input class="form-input" id="inv_service" placeholder="Kya supply kiya / kya kaam kiya">
-        </div>
-        <div class="grid2" style="gap:12px">
-          <div class="form-group">
-            <label class="form-label">🔢 Quantity</label>
-            <input class="form-input" id="inv_qty" type="number" value="1" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">💰 Price per unit (₹)</label>
-            <input class="form-input" id="inv_price" type="number" placeholder="0" oninput="updatePreview()">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">🏛 GST Rate</label>
-          <div style="display:flex;gap:8px">
-            ${[0,5,12,18,28].map(r => `
-              <div class="tag ${r===18?'selected':''}" onclick="selectGST(${r})" data-gst="${r}">${r}%</div>
-            `).join('')}
-          </div>
-        </div>
-        <div class="grid2" style="gap:12px">
-          <div class="form-group">
-            <label class="form-label">🎁 Discount (₹)</label>
-            <input class="form-input" id="inv_discount" type="number" value="0" oninput="updatePreview()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">🚛 Transport (₹)</label>
-            <input class="form-input" id="inv_transport" type="number" value="0" oninput="updatePreview()">
-          </div>
-        </div>
-
-        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px" id="liveCalc">
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text3);margin-bottom:6px">
-            <span>Subtotal</span><span id="pc_sub">₹0</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text3);margin-bottom:6px">
-            <span>GST (18%)</span><span id="pc_gst">₹0</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text3);margin-bottom:6px">
-            <span>Discount</span><span id="pc_disc" style="color:var(--accent4)">-₹0</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text3);margin-bottom:8px">
-            <span>Transport</span><span id="pc_trans">₹0</span>
-          </div>
-          <hr style="border:none;border-top:1px solid var(--border);margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--accent)">
-            <span>Total</span><span id="pc_total">₹0</span>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" style="flex:1" onclick="generateInvoice()">
-            🧾 Bill Banaye + PDF
-          </button>
-          <button class="btn btn-secondary" onclick="saveDraft()">💾 Save</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Invoice History -->
-    <div>
-      <div class="card">
-        <div class="section-header">
-          <div>
-            <div class="section-title">📜 Invoice History</div>
-            <div class="section-sub">${Store.invoices.length} invoices total</div>
-          </div>
-        </div>
-        ${Store.invoices.map(inv => {
-          const c = calcInvoice(inv);
-          return `
-          <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
-              <div>
-                <div style="font-size:13px;font-weight:700;color:var(--accent)">${inv.id}</div>
-                <div style="font-size:12px;font-weight:600;color:var(--text)">${inv.customer}</div>
-                <div style="font-size:11px;color:var(--text3)">${inv.date}</div>
-              </div>
-              <span class="badge ${inv.status==='Paid'?'badge-green':'badge-yellow'}">${inv.status}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:15px;font-weight:800;color:var(--text)">${formatCurrency(c.total)}</div>
-              <div style="display:flex;gap:6px">
-                <button class="btn btn-secondary btn-sm" onclick="downloadInvoicePDF('${inv.id}')">⬇️ PDF</button>
-                <button class="btn btn-secondary btn-sm" onclick="markPaid('${inv.id}')">✅</button>
-              </div>
-            </div>
-          </div>`;
-        }).join('')}
-
-        <div class="disclaimer" style="margin-top:12px">
-          <span>⚠️</span>
-          <span>Free plan: 10 invoices/month. <strong onclick="navigate('upgrade')" style="cursor:pointer;text-decoration:underline">Upgrade to Pro</strong> for unlimited.</span>
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function selectGST(rate) {
-  document.querySelectorAll('[data-gst]').forEach(el => el.classList.remove('selected'));
-  document.querySelector(`[data-gst="${rate}"]`).classList.add('selected');
-  window._selectedGST = rate;
-  updatePreview();
-}
-
-function updatePreview() {
-  const qty = parseFloat(document.getElementById('inv_qty')?.value)||1;
-  const price = parseFloat(document.getElementById('inv_price')?.value)||0;
-  const gst = window._selectedGST !== undefined ? window._selectedGST : 18;
-  const disc = parseFloat(document.getElementById('inv_discount')?.value)||0;
-  const trans = parseFloat(document.getElementById('inv_transport')?.value)||0;
-  const sub = qty * price;
-  const gstAmt = sub * gst/100;
-  const total = sub + gstAmt - disc + trans;
-  if(document.getElementById('pc_sub')) {
-    document.getElementById('pc_sub').textContent = formatCurrency(sub);
-    document.getElementById('pc_gst').textContent = formatCurrency(gstAmt);
-    document.getElementById('pc_disc').textContent = '-' + formatCurrency(disc);
-    document.getElementById('pc_trans').textContent = formatCurrency(trans);
-    document.getElementById('pc_total').textContent = formatCurrency(total);
-  }
-}
-
-function generateInvoice() {
-  const customer = document.getElementById('inv_customer')?.value || 'Customer';
-  const service = document.getElementById('inv_service')?.value || 'Service';
-  const qty = parseFloat(document.getElementById('inv_qty')?.value)||1;
-  const price = parseFloat(document.getElementById('inv_price')?.value)||0;
-  const gstRate = window._selectedGST !== undefined ? window._selectedGST : 18;
-  const discount = parseFloat(document.getElementById('inv_discount')?.value)||0;
-  const transport = parseFloat(document.getElementById('inv_transport')?.value)||0;
-
-  if (!price) { showToast('⚠️ Price daalo pehle!'); return; }
-
-  const inv = {
-    id: 'INV-' + String(Store.invoices.length + 1).padStart(3,'0'),
-    customer, date: new Date().toISOString().slice(0,10),
-    items: [{name:service, qty, price, gst:gstRate}],
-    discount, transport, status:'Pending'
+let ctx=canvas.getContext("2d");
+signUpload.onchange=e=>{
+  let r=new FileReader();
+  r.onload=ev=>{
+    let img=new Image();
+    img.onload=()=>ctx.drawImage(img,0,0,250,100);
+    img.src=ev.target.result;
   };
+  r.readAsDataURL(e.target.files[0]);
+};
 
-  Store.invoices.unshift(inv);
-  showToast('✅ Invoice + PDF ready!');
+function saveProfile(){
+  localStorage.setItem("logo",logo);
+  localStorage.setItem("sign",canvas.toDataURL());
+  alert("Saved");
+}
 
-  // Generate PDF using jsPDF
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const c = calcInvoice(inv);
+// PDF
+async function generatePDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF("p","mm","a4");
 
-    doc.setFillColor(26, 58, 42);
-    doc.rect(0, 0, 210, 35, 'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(22); doc.setFont(undefined, 'bold');
-    doc.text('TENDER MITRA', 15, 18);
-    doc.setFontSize(10); doc.setFont(undefined, 'normal');
-    doc.text('आपका व्यापार साथी', 15, 26);
-    doc.text('GST INVOICE', 170, 18, {align:'right'});
+  let y=20;
 
-    doc.setTextColor(50,50,50);
-    doc.setFontSize(11); doc.setFont(undefined, 'bold');
-    doc.text(`Invoice: ${inv.id}`, 15, 50);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Date: ${inv.date}`, 15, 57);
-    doc.text(`Bill To: ${customer}`, 15, 64);
-    doc.text(`From: ${Store.user.name}`, 15, 71);
-    doc.text(`GST No: ${Store.user.gst}`, 15, 78);
+  doc.setFillColor(30,60,114);
+  doc.rect(0,0,210,20,'F');
+  doc.setTextColor(255,255,255);
+  doc.text("INVOICE",90,13);
 
-    doc.setFillColor(26,58,42);
-    doc.rect(15, 88, 180, 8, 'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(9);
-    doc.text('Description', 18, 94);
-    doc.text('Qty', 110, 94);
-    doc.text('Rate', 130, 94);
-    doc.text('GST%', 152, 94);
-    doc.text('Amount', 180, 94, {align:'right'});
+  let logo=localStorage.getItem("logo");
+  let sign=localStorage.getItem("sign");
 
-    doc.setTextColor(50,50,50);
-    doc.setFontSize(10);
-    doc.text(service.substring(0,35), 18, 106);
-    doc.text(String(qty), 110, 106);
-    doc.text('₹'+price, 130, 106);
-    doc.text(gstRate+'%', 152, 106);
-    doc.text('₹'+(qty*price).toFixed(0), 195, 106, {align:'right'});
-
-    doc.setDrawColor(200,200,200);
-    doc.line(15, 112, 195, 112);
-
-    const lines = [
-      ['Subtotal', formatCurrency(c.subtotal)],
-      [`GST @ ${gstRate}%`, formatCurrency(c.gstAmount)],
-      ['Discount', '-'+formatCurrency(c.discount)],
-      ['Transport', formatCurrency(c.transport)],
-    ];
-    let y = 122;
-    lines.forEach(([l,v]) => {
-      doc.setFontSize(10);
-      doc.text(l, 140, y);
-      doc.text(v, 195, y, {align:'right'});
-      y += 8;
-    });
-
-    doc.setFillColor(26,58,42);
-    doc.rect(130, y, 65, 10, 'F');
-    doc.setTextColor(255,255,255);
-    doc.setFont(undefined,'bold');
-    doc.setFontSize(11);
-    doc.text('TOTAL: '+formatCurrency(c.total), 195, y+7, {align:'right'});
-
-    doc.setTextColor(150,150,150);
-    doc.setFont(undefined,'normal');
-    doc.setFontSize(8);
-    doc.text('Generated by Tender Mitra | www.tendermitra.in', 105, 280, {align:'center'});
-    doc.text('This is a computer-generated invoice. No signature required.', 105, 285, {align:'center'});
-
-    doc.save(`${inv.id}_${customer}.pdf`);
-  } catch(e) {
-    showToast('📄 Invoice saved! PDF library loading...');
+  if(logo){
+    doc.addImage(logo,'PNG',10,3,30,15);
   }
-  navigate('billing');
-}
 
-function saveDraft() { showToast('💾 Draft saved!'); }
-function markPaid(id) {
-  const inv = Store.invoices.find(i=>i.id===id);
-  if(inv) { inv.status = inv.status==='Paid'?'Pending':'Paid'; }
-  navigate('billing');
-  showToast('✅ Status updated!');
-}
-function downloadInvoicePDF(id) { showToast('📄 PDF download starting...'); }
+  doc.setTextColor(0,0,0);
 
-// ─── EXPENSES ─────────────────────────────────────────────────────────────────
-function buildExpenses() {
-  const cats = ['Fuel','Labour','Material','Misc','Rent','Other'];
-  const totals = {};
-  cats.forEach(c => totals[c] = Store.expenses.filter(e=>e.category===c).reduce((s,e)=>s+e.amount,0));
-  const grandTotal = Object.values(totals).reduce((a,b)=>a+b,0);
-  const catIcons = {Fuel:'⛽',Labour:'👷',Material:'🧱',Misc:'📦',Rent:'🏢',Other:'💼'};
+  doc.text("Invoice: "+invNo.innerText,10,30);
+  doc.text("Customer: "+customer.value,10,38);
+  doc.text("Date: "+new Date().toLocaleDateString(),150,30);
 
-  return `
-  <div class="grid2" style="gap:16px;align-items:start">
-    <div>
-      <div class="card" style="margin-bottom:16px">
-        <div class="section-title" style="margin-bottom:16px">➕ Kharcha Add Karein</div>
-        <div class="form-group">
-          <label class="form-label">📂 Category</label>
-          <select class="form-select" id="exp_cat">
-            ${cats.map(c=>`<option value="${c}">${catIcons[c]} ${c}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">💰 Amount (₹)</label>
-          <input class="form-input" id="exp_amt" type="number" placeholder="0">
-        </div>
-        <div class="form-group">
-          <label class="form-label">📝 Note</label>
-          <input class="form-input" id="exp_note" placeholder="Kharche ke baare mein likho">
-        </div>
-        <div class="form-group">
-          <label class="form-label">📅 Date</label>
-          <input class="form-input" id="exp_date" type="date" value="${new Date().toISOString().slice(0,10)}">
-        </div>
-        <button class="btn btn-primary btn-full" onclick="addExpense()">💸 Kharcha Jodon</button>
-      </div>
+  y=50;
 
-      <div class="card">
-        <div class="section-title" style="margin-bottom:14px">📊 Category Summary</div>
-        ${cats.filter(c=>totals[c]>0).map(c => `
-          <div style="margin-bottom:12px">
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
-              <span style="color:var(--text2)">${catIcons[c]} ${c}</span>
-              <span style="font-weight:700;color:var(--text)">${formatCurrency(totals[c])}</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width:${grandTotal>0?Math.round(totals[c]/grandTotal*100):0}%;background:${c==='Fuel'?'#e74c3c':c==='Labour'?'#3498db':c==='Material'?'#f39c12':'#2ecc71'}"></div>
-            </div>
-          </div>
-        `).join('')}
-        <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-          <span style="font-weight:700;color:var(--text2)">Total Kharcha</span>
-          <span style="font-size:18px;font-weight:800;color:var(--accent4)">${formatCurrency(grandTotal)}</span>
-        </div>
-      </div>
-    </div>
+  items.forEach(i=>{
+    doc.text(`${i.name} - ₹${i.total.toFixed(2)}`,10,y);
+    y+=8;
+  });
 
-    <div class="card">
-      <div class="section-header">
-        <div>
-          <div class="section-title">📋 Expense Log</div>
-          <div class="section-sub">${Store.expenses.length} entries</div>
-        </div>
-      </div>
-      ${Store.expenses.map(e => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px">
-              ${catIcons[e.category]||'💼'}
-            </div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--text)">${e.category}</div>
-              <div style="font-size:11px;color:var(--text3)">${e.note} • ${e.date}</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="font-size:15px;font-weight:700;color:var(--accent4)">${formatCurrency(e.amount)}</div>
-            <button class="btn btn-secondary btn-sm" onclick="deleteExpense('${e.id}')" style="padding:4px 8px">🗑️</button>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  </div>`;
-}
+  y+=10;
+  doc.text("Final Total: ₹"+finalTotal.innerText,140,y);
 
-function addExpense() {
-  const cat = document.getElementById('exp_cat')?.value;
-  const amt = parseFloat(document.getElementById('exp_amt')?.value)||0;
-  const note = document.getElementById('exp_note')?.value||'';
-  const date = document.getElementById('exp_date')?.value||new Date().toISOString().slice(0,10);
-  if(!amt) { showToast('⚠️ Amount daalo!'); return; }
-  Store.expenses.unshift({id:'EXP-'+Date.now(), category:cat, amount:amt, note, date});
-  showToast('✅ Kharcha add ho gaya!');
-  navigate('expenses');
-}
-
-function deleteExpense(id) {
-  Store.expenses = Store.expenses.filter(e=>e.id!==id);
-  navigate('expenses');
-  showToast('🗑️ Deleted');
-}
-
-// ─── TENDERS ──────────────────────────────────────────────────────────────────
-Store._tenderFilter = { cat: 'All', state: 'All' };
-
-function buildTenders() {
-  const cats = ['All','Construction','Transport','Electrical','Supply','Manpower'];
-  const states = ['All','Delhi','Maharashtra','Uttar Pradesh','Haryana','Rajasthan'];
-  const filtered = Store.tenders.filter(t =>
-    (Store._tenderFilter.cat==='All' || t.category===Store._tenderFilter.cat) &&
-    (Store._tenderFilter.state==='All' || t.location===Store._tenderFilter.state)
-  );
-
-  return `
-  <div class="disclaimer" style="margin-bottom:16px">
-    <span>⚠️</span>
-    <span><strong>Disclaimer:</strong> Tender Mitra sirf information dikhata hai. Official apply ke liye government portal par jaayein. Ye tool kisi bhi sarkari website ka hissa nahi hai.</span>
-  </div>
-
-  <div class="card" style="margin-bottom:16px">
-    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
-      <div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:8px">📂 Category Filter</div>
-        <div class="pill-row">
-          ${cats.map(c => `
-            <div class="pill ${Store._tenderFilter.cat===c?'inc':'neu'}" onclick="filterTender('cat','${c}')">${c}</div>
-          `).join('')}
-        </div>
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:8px">📍 State</div>
-        <select class="form-select" style="width:160px" onchange="filterTender('state',this.value)">
-          ${states.map(s => `<option value="${s}" ${Store._tenderFilter.state===s?'selected':''}>${s}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div style="font-size:13px;color:var(--text3);margin-bottom:12px">
-    🔄 Last updated: 2 hours ago &nbsp;|&nbsp; ${filtered.length} tenders found
-    <span style="float:right" class="badge badge-green pulse">● Live</span>
-  </div>
-
-  <div style="display:grid;gap:12px">
-    ${filtered.map(t => {
-      const dl = daysLeft(t.deadline);
-      const saved = Store.savedTenders.includes(t.id);
-      return `
-      <div class="tender-card">
-        <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
-          <div style="flex:1">
-            <div class="tender-title">${t.title}</div>
-            <div class="tender-meta">
-              <span>🏛️ ${t.dept}</span>
-              <span>📍 ${t.location}</span>
-              <span class="${dl<7?'deadline-urgent':''}">📅 ${dl < 0 ? 'Expired' : dl+'d left'} (${t.deadline})</span>
-              <span class="badge badge-blue">${t.category}</span>
-            </div>
-          </div>
-          <div style="text-align:right;min-width:100px">
-            <div class="tender-value">${t.value}</div>
-            <span class="badge badge-green" style="margin-top:4px">${t.status}</span>
-          </div>
-        </div>
-        <div class="tender-footer" style="padding-top:12px;border-top:1px solid var(--border)">
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-secondary btn-sm" onclick="toggleSave('${t.id}')">
-              ${saved?'💛 Saved':'🤍 Save'}
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="showTenderGuide('${t.id}')">
-              📖 How to Apply
-            </button>
-          </div>
-          <a href="${t.url}" target="_blank" class="btn btn-primary btn-sm">
-            🔗 Apply Now ↗
-          </a>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>
-
-  <div class="card" style="margin-top:20px">
-    <div class="section-title" style="margin-bottom:10px">💡 Tender Apply Karne Ka Guide</div>
-    <div style="display:grid;gap:8px">
-      ${[
-        ['1️⃣','Register on GeM / eProcure portal (free)'],
-        ['2️⃣','PAN, Aadhaar, and GST number ready rakho'],
-        ['3️⃣','Tender ke documents carefully padho (EMD, eligibility)'],
-        ['4️⃣','Bid submit karo deadline se pehle'],
-        ['5️⃣','Work order milne par Contract sign karo'],
-      ].map(([n,t]) => `
-        <div style="display:flex;gap:10px;align-items:center;font-size:13px;color:var(--text2)">
-          <span style="font-size:18px">${n}</span>
-          <span>${t}</span>
-        </div>
-      `).join('')}
-    </div>
-  </div>`;
-}
-
-function filterTender(type, value) {
-  Store._tenderFilter[type] = value;
-  navigate('tenders');
-}
-
-function toggleSave(id) {
-  if(Store.savedTenders.includes(id)) {
-    Store.savedTenders = Store.savedTenders.filter(x=>x!==id);
-    showToast('💔 Removed from saved');
-  } else {
-    Store.savedTenders.push(id);
-    showToast('💛 Tender saved!');
+  if(sign){
+    doc.text("Signature",10,260);
+    doc.addImage(sign,'PNG',10,265,50,20);
   }
-  navigate('tenders');
+
+  doc.save("Invoice_SaaS.pdf");
 }
 
-function showTenderGuide(id) {
-  showToast('📖 Guide: Register on GeM/eProcure, upload documents, submit bid before deadline!');
-}
-
-// ─── REPORTS ──────────────────────────────────────────────────────────────────
-function buildReports() {
-  const totalSales = Store.invoices.reduce((s,inv)=>s+calcInvoice(inv).total,0);
-  const totalGST = Store.invoices.reduce((s,inv)=>s+calcInvoice(inv).gstAmount,0);
-  const totalExp = Store.expenses.reduce((s,e)=>s+e.amount,0);
-  const paid = Store.invoices.filter(i=>i.status==='Paid').reduce((s,inv)=>s+calcInvoice(inv).total,0);
-  const pending = Store.invoices.filter(i=>i.status==='Pending').reduce((s,inv)=>s+calcInvoice(inv).total,0);
-
-  return `
-  <div class="disclaimer" style="margin-bottom:20px">
-    <span>⚠️</span>
-    <span><strong>Important:</strong> Ye tool GST/ITR FILE nahi karta. Sirf summary dikhata hai. GST filing ke liye apne CA se milein.</span>
-  </div>
-
-  <div class="grid4" style="margin-bottom:20px">
-    <div class="stat-card">
-      <div class="stat-label">💼 Total Sales</div>
-      <div class="stat-value">${formatCurrency(totalSales)}</div>
-      <div class="stat-delta">${Store.invoices.length} invoices</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">🏛 GST Collected</div>
-      <div class="stat-value" style="color:var(--accent3)">${formatCurrency(totalGST)}</div>
-      <div class="stat-delta">Output tax</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">✅ Paid</div>
-      <div class="stat-value" style="color:var(--accent)">${formatCurrency(paid)}</div>
-      <div class="stat-delta delta-up">Received</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">⏳ Pending</div>
-      <div class="stat-value" style="color:var(--accent4)">${formatCurrency(pending)}</div>
-      <div class="stat-delta delta-down">Awaited</div>
-    </div>
-  </div>
-
-  <div class="grid2" style="gap:16px;margin-bottom:16px">
-    <div class="card">
-      <div class="section-title" style="margin-bottom:14px">📊 GST Summary (This Month)</div>
-      <div style="display:grid;gap:10px">
-        ${[
-          ['Output GST (Sales pe)', formatCurrency(totalGST), 'var(--accent3)'],
-          ['Input GST (Purchases pe)', '₹12,400', 'var(--accent5)'],
-          ['Net GST Payable', formatCurrency(Math.max(0,totalGST-12400)), 'var(--accent4)'],
-        ].map(([l,v,c]) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg3);border-radius:8px">
-            <span style="font-size:13px;color:var(--text2)">${l}</span>
-            <span style="font-size:14px;font-weight:700;color:${c}">${v}</span>
-          </div>
-        `).join('')}
-      </div>
-      <div class="disclaimer" style="margin-top:12px">
-        <span>⚠️</span><span>Ye sirf estimate hai. CA se verify karwa lein.</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-title" style="margin-bottom:14px">📋 ITR-Ready Summary</div>
-      <div style="display:grid;gap:10px">
-        ${[
-          ['Gross Income', formatCurrency(totalSales)],
-          ['Business Expenses', formatCurrency(totalExp)],
-          ['Net Taxable Income', formatCurrency(totalSales - totalExp)],
-          ['GST Collected', formatCurrency(totalGST)],
-        ].map(([l,v]) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span style="color:var(--text3)">${l}</span>
-            <span style="font-weight:700;color:var(--text)">${v}</span>
-          </div>
-        `).join('')}
-      </div>
-      <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="downloadReport()">
-        📥 Download ITR Summary (PDF)
-      </button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="section-header">
-      <div>
-        <div class="section-title">🧾 Invoice-wise Breakdown</div>
-        <div class="section-sub">GST details for each invoice</div>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="showToast('📊 Exporting to Excel...')">📊 Export</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Invoice</th>
-            <th>Customer</th>
-            <th>Date</th>
-            <th>Subtotal</th>
-            <th>GST</th>
-            <th>Total</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${Store.invoices.map(inv => {
-            const c = calcInvoice(inv);
-            return `<tr>
-              <td style="color:var(--accent);font-weight:600">${inv.id}</td>
-              <td>${inv.customer}</td>
-              <td>${inv.date}</td>
-              <td>${formatCurrency(c.subtotal)}</td>
-              <td style="color:var(--accent3)">${formatCurrency(c.gstAmount)}</td>
-              <td style="font-weight:700">${formatCurrency(c.total)}</td>
-              <td><span class="badge ${inv.status==='Paid'?'badge-green':'badge-yellow'}">${inv.status}</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  </div>`;
-}
-
-function downloadReport() {
-  showToast('📥 ITR Summary PDF download ho raha hai...');
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFillColor(26,58,42);
-    doc.rect(0,0,210,30,'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(18); doc.setFont(undefined,'bold');
-    doc.text('TENDER MITRA – INCOME TAX SUMMARY', 105, 18, {align:'center'});
-    doc.setTextColor(50,50,50);
-    doc.setFontSize(12);
-    doc.text(`Name: ${Store.user.name}`, 15, 45);
-    doc.text(`Business: ${Store.user.business}`, 15, 53);
-    doc.text(`GST: ${Store.user.gst}`, 15, 61);
-    doc.text(`Period: June 2025`, 15, 69);
-    doc.setFontSize(10);
-    doc.text('⚠️ Disclaimer: This report is for reference only. Please consult a CA for ITR filing.', 105, 280, {align:'center'});
-    doc.save('ITR_Summary_TenderMitra.pdf');
-  } catch(e) {}
-}
-
-// ─── PROFILE ──────────────────────────────────────────────────────────────────
-function buildProfile() {
-  return `
-  <div style="max-width:520px">
-    <div class="card" style="margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-        <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">
-          ${Store.user.name[0]}
-        </div>
-        <div>
-          <div style="font-size:18px;font-weight:700">${Store.user.name}</div>
-          <div style="font-size:13px;color:var(--text3)">📱 +91 ${Store.user.phone}</div>
-          <div class="plan-badge" style="margin-top:4px">FREE PLAN</div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">👤 Full Name</label>
-        <input class="form-input" value="${Store.user.name}" id="p_name">
-      </div>
-      <div class="form-group">
-        <label class="form-label">🏢 Business Type</label>
-        <select class="form-select" id="p_biz">
-          <option ${Store.user.business.includes('Construction')?'selected':''}>Construction & Supply</option>
-          <option>Transport</option>
-          <option>Electrical</option>
-          <option>Manpower</option>
-          <option>General Supply</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">🏛 GST Number (Optional)</label>
-        <input class="form-input" value="${Store.user.gst}" id="p_gst" style="font-family:'JetBrains Mono',monospace">
-      </div>
-      <button class="btn btn-primary btn-full" onclick="saveProfile()">💾 Profile Update Karein</button>
-    </div>
-
-    <div class="card" style="margin-bottom:16px">
-      <div class="section-title" style="margin-bottom:14px">⭐ Your Plan</div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <span style="color:var(--text3)">Plan</span><span style="font-weight:700">Free</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <span style="color:var(--text3)">Invoices</span><span style="font-weight:700">5/10 used</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px">
-        <span style="color:var(--text3)">Tender Access</span><span style="font-weight:700">Basic</span>
-      </div>
-      <button class="btn btn-gold btn-full" style="margin-top:14px" onclick="navigate('upgrade')">⭐ Pro Mein Upgrade Karein</button>
-    </div>
-
-    <div class="card">
-      <div class="section-title" style="margin-bottom:14px">⚙️ Settings</div>
-      ${['Notifications','Hindi Interface','Dark Mode','Auto-save'].map(s => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)">
-          <span style="font-size:13px;color:var(--text2)">${s}</span>
-          <div style="width:44px;height:24px;background:var(--accent);border-radius:12px;cursor:pointer;position:relative">
-            <div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;right:2px;transition:all 0.2s"></div>
-          </div>
-        </div>
-      `).join('')}
-      <button class="btn btn-danger btn-sm" style="margin-top:14px" onclick="logout()">🚪 Logout</button>
-    </div>
-  </div>`;
-}
-
-function saveProfile() {
-  Store.user.name = document.getElementById('p_name')?.value || Store.user.name;
-  Store.user.gst = document.getElementById('p_gst')?.value || Store.user.gst;
-  showToast('✅ Profile saved!');
-}
-function logout() { Store.loggedIn = false; render(); }
-
-// ─── UPGRADE ──────────────────────────────────────────────────────────────────
-function buildUpgrade() {
-  return `
-  <div style="max-width:600px;margin:0 auto;text-align:center;padding-top:20px">
-    <div style="font-size:48px;margin-bottom:16px">⭐</div>
-    <div style="font-size:28px;font-weight:800;margin-bottom:8px">Tender Mitra Pro</div>
-    <div style="font-size:14px;color:var(--text3);margin-bottom:32px">Apna business barha lo — unlimited features ke saath</div>
-
-    <div class="grid2" style="gap:16px;margin-bottom:32px;text-align:left">
-      <div class="card" style="border-color:var(--border)">
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px">🆓 Free Plan</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Shuruaat ke liye</div>
-        <div style="font-size:28px;font-weight:800;margin-bottom:16px">₹0<span style="font-size:12px;color:var(--text3)">/month</span></div>
-        ${['10 invoices/month','Basic tender view','GST summary (3 months)','PDF download'].map(f=>`
-          <div style="font-size:13px;color:var(--text3);padding:5px 0;display:flex;gap:8px">
-            <span style="color:var(--accent)">✓</span>${f}
-          </div>
-        `).join('')}
-      </div>
-      <div class="card" style="border-color:var(--gold);position:relative;overflow:hidden">
-        <div style="position:absolute;top:12px;right:-20px;background:var(--gold);color:#111;padding:4px 30px;font-size:11px;font-weight:700;transform:rotate(45deg)">HOT</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--gold)">⭐ Pro Plan</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Professionals ke liye</div>
-        <div style="font-size:28px;font-weight:800;margin-bottom:4px;color:var(--gold)">₹299<span style="font-size:12px;color:var(--text3)">/month</span></div>
-        <div style="font-size:11px;color:var(--accent);margin-bottom:16px">Annual plan: ₹199/mo (₹2388/yr)</div>
-        ${['Unlimited invoices','All tender categories','GST + ITR reports','Tender deadline alerts','Priority support','Excel export','Custom logo on bills'].map(f=>`
-          <div style="font-size:13px;color:var(--text2);padding:5px 0;display:flex;gap:8px">
-            <span style="color:var(--gold)">★</span>${f}
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <button class="btn btn-gold" style="padding:16px 40px;font-size:16px" onclick="showToast('🚀 Payment gateway loading... (Coming Soon!)')">
-      ⭐ Pro Mein Upgrade Karein — ₹299/month
-    </button>
-    <div style="font-size:11px;color:var(--text3);margin-top:12px">
-      Secure payment via Razorpay • Cancel anytime • UPI supported
-    </div>
-  </div>`;
-}
-
-// ─── LOGIN ────────────────────────────────────────────────────────────────────
-function buildLogin() {
-  if(Store.loginStep === 'otp') {
-    return `
-    <div class="login-screen">
-      <div class="login-box">
-        <div class="login-logo">🔐</div>
-        <div style="font-size:20px;font-weight:800;margin-bottom:6px">OTP Verify Karein</div>
-        <div style="font-size:13px;color:var(--text3);margin-bottom:6px">+91 ${Store.phone} pe OTP bheja gaya</div>
-        <div style="font-size:12px;color:var(--accent);margin-bottom:20px;cursor:pointer" onclick="Store.loginStep='phone';render()">← Number badlein</div>
-        <div class="otp-inputs">
-          ${[0,1,2,3,4,5].map(i=>`<input class="otp-input" maxlength="1" id="otp${i}" oninput="otpNext(${i})">`).join('')}
-        </div>
-        <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="verifyOTP()">✅ Verify & Login</button>
-        <div style="font-size:12px;color:var(--text3);margin-top:16px">OTP nahi mila? <span style="color:var(--accent);cursor:pointer" onclick="showToast('📱 OTP resent!')">Resend OTP</span></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:8px">Demo ke liye koi bhi 6 digit enter karein</div>
-      </div>
-    </div>`;
-  }
-  return `
-  <div class="login-screen">
-    <div class="login-box">
-      <div class="login-logo">🤝</div>
-      <div style="font-size:24px;font-weight:800;margin-bottom:4px">Tender Mitra</div>
-      <div style="font-size:13px;color:var(--text3);margin-bottom:4px">आपका व्यापार साथी</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:28px">Contractors • Transporters • Suppliers</div>
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">📱 Mobile Number</label>
-        <input class="form-input" id="login_phone" type="tel" maxlength="10" placeholder="10-digit mobile number" style="font-size:16px;letter-spacing:2px;font-family:'JetBrains Mono',monospace">
-      </div>
-      <button class="btn btn-primary btn-full" style="font-size:15px;padding:14px" onclick="sendOTP()">
-        📲 OTP Bhejo
-      </button>
-      <div class="divider"></div>
-      <div style="font-size:12px;color:var(--text3)">
-        Login karke aap hamare <span style="color:var(--accent)">Terms & Privacy Policy</span> se agree karte hain
-      </div>
-      <div style="margin-top:16px;padding:12px;background:var(--bg3);border-radius:10px;font-size:12px;color:var(--text3)">
-        🔒 OTP se secure login • Koi password nahi chahiye
-      </div>
-    </div>
-  </div>`;
-}
-
-function sendOTP() {
-  const phone = document.getElementById('login_phone')?.value;
-  if(!phone || phone.length < 10) { showToast('⚠️ Valid 10-digit number daalo'); return; }
-  Store.phone = phone;
-  Store.loginStep = 'otp';
-  showToast('📱 OTP sent to +91 ' + phone);
-  render();
-  setTimeout(() => document.getElementById('otp0')?.focus(), 100);
-}
-
-function otpNext(i) {
-  const el = document.getElementById(`otp${i}`);
-  if(el?.value.length >= 1 && i < 5) document.getElementById(`otp${i+1}`)?.focus();
-}
-
-function verifyOTP() {
-  Store.loggedIn = true;
-  Store.loginStep = 'phone';
-  showToast('🎉 Login successful! Namaste!');
-  render();
-}
-
-// ─── EVENTS ───────────────────────────────────────────────────────────────────
-function attachEvents() {
-  // Show menu button on mobile
-  const menuBtn = document.getElementById('menuBtn');
-  if(menuBtn && window.innerWidth <= 768) menuBtn.style.display = 'flex';
-  // Initial preview update
-  if(Store.currentPage === 'billing') {
-    setTimeout(updatePreview, 100);
-  }
-}
-
-function toggleSidebar() {
-  document.getElementById('sidebar')?.classList.toggle('open');
-  document.getElementById('sidebarOverlay')?.classList.toggle('open');
-}
-
-function closeSidebar() {
-  document.getElementById('sidebar')?.classList.remove('open');
-  document.getElementById('sidebarOverlay')?.classList.remove('open');
-}
-
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
-  const menuBtn = document.getElementById('menuBtn');
-  if(menuBtn) menuBtn.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
-});
-
-window._selectedGST = 18;
-render();
 </script>
+
 </body>
 </html>
