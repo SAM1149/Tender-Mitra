@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tender Mitra | Professional GST SaaS</title>
+    <title>Tender Mitra | Pro Billing with Logo & Sign</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -15,7 +15,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        input:focus, select:focus { outline: 2px solid #4f46e5; border-color: transparent; }
+        input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 1px 0 0 #4f46e5; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -40,221 +40,275 @@
             return str;
         }
 
-        // --- SUB-COMPONENTS (Defined Outside to prevent Focus Loss) ---
-        const HomeView = ({ invoices, setView, setShowBillModal, generatePDF }) => (
-            <div className="p-4 space-y-4">
-                <div className="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-indigo-600">
-                    <p className="text-xs font-bold text-gray-400 uppercase">Total Sales</p>
-                    <h2 className="text-3xl font-black text-indigo-900">₹{invoices.reduce((a,b) => a + b.totals.grandTotal, 0).toLocaleString()}</h2>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => setShowBillModal(true)} className="bg-white h-32 rounded-3xl shadow-sm border flex flex-col items-center justify-center space-y-2">
-                        <div className="bg-green-100 p-3 rounded-full"><i className="fas fa-plus text-green-600"></i></div>
-                        <span className="font-bold text-sm">Create Invoice</span>
-                    </button>
-                    <button onClick={() => setView('profile')} className="bg-white h-32 rounded-3xl shadow-sm border flex flex-col items-center justify-center space-y-2">
-                        <div className="bg-indigo-100 p-3 rounded-full"><i className="fas fa-cog text-indigo-600"></i></div>
-                        <span className="font-bold text-sm">Profile Set</span>
-                    </button>
-                </div>
-                <h3 className="font-bold text-gray-800">Recent Invoices</h3>
-                {invoices.map(inv => (
-                    <div key={inv.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
-                        <div>
-                            <p className="font-bold text-sm">{inv.meta.buyerName}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">{inv.meta.invoiceNo} • {inv.meta.date}</p>
-                        </div>
-                        <button onClick={() => generatePDF(inv.meta, inv.items, inv.totals)} className="text-indigo-600 p-2"><i className="fas fa-download"></i></button>
-                    </div>
-                ))}
-            </div>
-        );
-
-        const ProfileView = ({ profile, setProfile, setView }) => (
-            <div className="p-4 space-y-4">
-                <button onClick={() => setView('home')} className="text-indigo-600 font-bold flex items-center mb-2">
-                    <i className="fas fa-arrow-left mr-2"></i> Back to Dashboard
-                </button>
-                <div className="bg-white p-6 rounded-3xl shadow-lg space-y-4">
-                    <h2 className="font-bold text-xl border-b pb-2">Business Identity</h2>
-                    <div className="space-y-3">
-                        <label className="block">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">Company Name</span>
-                            <input value={profile.companyName} onChange={e => setProfile({...profile, companyName: e.target.value})} className="w-full border-b p-2 text-sm" />
-                        </label>
-                        <label className="block">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">Address</span>
-                            <input value={profile.address} onChange={e => setProfile({...profile, address: e.target.value})} className="w-full border-b p-2 text-sm" />
-                        </label>
-                        <div className="grid grid-cols-2 gap-4">
-                            <label className="block">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase">GSTIN</span>
-                                <input value={profile.gstin} onChange={e => setProfile({...profile, gstin: e.target.value})} className="w-full border-b p-2 text-sm" />
-                            </label>
-                            <label className="block">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase">State Code</span>
-                                <input value={profile.stateCode} onChange={e => setProfile({...profile, stateCode: e.target.value})} className="w-full border-b p-2 text-sm" />
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <h2 className="font-bold text-xl border-b pb-2 pt-4">Bank Details</h2>
-                    <div className="space-y-3">
-                        <input value={profile.bankName} onChange={e => setProfile({...profile, bankName: e.target.value})} placeholder="Bank Name" className="w-full border-b p-2 text-sm" />
-                        <input value={profile.accNo} onChange={e => setProfile({...profile, accNo: e.target.value})} placeholder="Account Number" className="w-full border-b p-2 text-sm" />
-                        <input value={profile.ifsc} onChange={e => setProfile({...profile, ifsc: e.target.value})} placeholder="IFSC Code" className="w-full border-b p-2 text-sm" />
-                    </div>
-                    
-                    <button onClick={() => setView('home')} className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold shadow-lg mt-6">Save & Exit</button>
-                </div>
-            </div>
-        );
-
         // --- MAIN APP COMPONENT ---
         function TenderMitra() {
             const [view, setView] = useState('home');
-            const [invoices, setInvoices] = useState(() => JSON.parse(localStorage.getItem('tm_invoices_final')) || []);
             const [showBillModal, setShowBillModal] = useState(false);
 
-            const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('tm_profile_final')) || {
+            const [invoices, setInvoices] = useState(() => JSON.parse(localStorage.getItem('tm_inv_v6')) || []);
+            
+            // PROFILE STATE (Now includes Logo and Signature)
+            const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('tm_prof_v6')) || {
                 companyName: "SAM ENTERPRISES",
                 address: "Narnaul, Haryana",
                 gstin: "06AAAAA0000A1Z5",
-                state: "Haryana",
                 stateCode: "06",
                 bankName: "AXIS BANK",
                 accNo: "91234567890",
                 ifsc: "UTIB0001234",
-                terms: "Goods once sold will not be taken back.",
-                declaration: "We declare that this invoice shows the actual price described."
+                logo: "",
+                signature: ""
             });
 
             const [bill, setBill] = useState({
                 invoiceNo: `INV-${Date.now().toString().slice(-4)}`,
                 date: new Date().toISOString().split('T')[0],
                 buyerName: "",
-                buyerGSTIN: "",
                 buyerAddress: "",
-                buyerStateCode: "",
-                shipTo: "",
+                buyerGSTIN: "",
                 placeOfSupply: "Haryana",
-                items: [{ id: 1, desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }],
-                transportCharges: 0,
-                packagingCharges: 0,
-                totalDiscount: 0
+                items: [{ id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }],
+                discount: 0,
+                transportCharges: 0
             });
 
-            useEffect(() => localStorage.setItem('tm_profile_final', JSON.stringify(profile)), [profile]);
-            useEffect(() => localStorage.setItem('tm_invoices_final', JSON.stringify(invoices)), [invoices]);
+            useEffect(() => { localStorage.setItem('tm_prof_v6', JSON.stringify(profile)); }, [profile]);
+            useEffect(() => { localStorage.setItem('tm_inv_v6', JSON.stringify(invoices)); }, [invoices]);
+
+            // --- HANDLERS ---
+            const handleProfileChange = (field, value) => {
+                setProfile(prev => ({ ...prev, [field]: value }));
+            };
+
+            // Image Upload to Base64 (Required for jsPDF & LocalStorage)
+            const handleImageUpload = (field, e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        handleProfileChange(field, reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleBillChange = (field, value) => { setBill(prev => ({ ...prev, [field]: value })); };
+            const handleItemChange = (id, field, value) => {
+                setBill(prev => ({ ...prev, items: prev.items.map(it => it.id === id ? { ...it, [field]: value } : it) }));
+            };
 
             const totals = useMemo(() => {
-                let taxableValue = bill.items.reduce((acc, it) => acc + (it.qty * it.rate), 0);
-                taxableValue -= Number(bill.totalDiscount);
+                let taxableValue = bill.items.reduce((acc, it) => acc + (it.qty * it.rate), 0) - Number(bill.discount);
                 const totalGST = bill.items.reduce((acc, it) => acc + ((it.qty * it.rate) * (it.gstRate / 100)), 0);
-                const grandTotal = taxableValue + totalGST + Number(bill.transportCharges) + Number(bill.packagingCharges);
+                const grandTotal = taxableValue + totalGST + Number(bill.transportCharges);
                 return { taxableValue, cgst: totalGST / 2, sgst: totalGST / 2, grandTotal };
             }, [bill]);
 
-            const generatePDF = (meta, items, calculatedTotals) => {
+            // --- PDF GENERATOR (A4 Size Perfect Ratio) ---
+            const generatePDF = (invoiceData, calcTotals) => {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+                const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" }); // Standard A4: 210 x 297 mm
                 
+                // 1. ADD LOGO (Top Left)
+                if (profile.logo) {
+                    // x: 12, y: 10, width: 35mm, height: 18mm (Maintains a standard rectangular ratio)
+                    doc.addImage(profile.logo, 12, 10, 35, 18);
+                }
+
+                // 2. HEADER DETAILS
                 doc.setFontSize(18); doc.setFont(undefined, 'bold');
-                doc.text(profile.companyName, 105, 15, { align: 'center' });
+                doc.text(profile.companyName, 105, 16, { align: 'center' }); // Centered
                 doc.setFontSize(9); doc.setFont(undefined, 'normal');
-                doc.text(`${profile.address} | GSTIN: ${profile.gstin}`, 105, 22, { align: 'center' });
-                doc.line(10, 26, 200, 26);
-                doc.setFontSize(14); doc.text("TAX INVOICE", 105, 33, { align: 'center' });
-                doc.line(10, 36, 200, 36);
+                doc.text(`${profile.address} | GSTIN: ${profile.gstin}`, 105, 23, { align: 'center' });
+                doc.line(10, 30, 200, 30);
+                doc.setFontSize(14); doc.text("TAX INVOICE", 105, 37, { align: 'center' });
+                doc.line(10, 40, 200, 40);
 
+                // 3. PARTY DETAILS
                 doc.setFontSize(9); doc.setFont(undefined, 'bold');
-                doc.text("Bill To:", 12, 45); doc.text("Invoice Details:", 140, 45);
+                doc.text("Bill To:", 12, 48); doc.text("Invoice Details:", 140, 48);
                 doc.setFont(undefined, 'normal');
-                doc.text(`${meta.buyerName}\n${meta.buyerAddress}\nGSTIN: ${meta.buyerGSTIN}`, 12, 50);
-                doc.text(`No: ${meta.invoiceNo}\nDate: ${meta.date}\nSupply: ${meta.placeOfSupply}`, 140, 50);
+                doc.text(`${invoiceData.buyerName}\n${invoiceData.buyerAddress}\nGSTIN: ${invoiceData.buyerGSTIN}`, 12, 53);
+                doc.text(`No: ${invoiceData.invoiceNo}\nDate: ${invoiceData.date}\nSupply: ${invoiceData.placeOfSupply}`, 140, 53);
 
+                // 4. ITEMS TABLE
                 doc.autoTable({
-                    startY: 70,
+                    startY: 75,
                     head: [['S.No', 'Description', 'HSN', 'Qty', 'Unit Price', 'Total']],
-                    body: items.map((it, idx) => [idx + 1, it.desc, it.hsn, it.qty, it.rate.toFixed(2), (it.qty * it.rate).toFixed(2)]),
-                    theme: 'grid', styles: { fontSize: 8 }
+                    body: invoiceData.items.map((it, idx) => [idx + 1, it.desc, it.hsn, it.qty, it.rate.toFixed(2), (it.qty * it.rate).toFixed(2)]),
+                    theme: 'grid', styles: { fontSize: 8 },
+                    headStyles: { fillColor: [79, 70, 229] } // Indigo Color Header
                 });
 
+                // 5. SUMMARY CALCULATION
                 const fY = doc.lastAutoTable.finalY + 10;
-                doc.text(`Amount in words: ${numberToWords(Math.round(calculatedTotals.grandTotal))}`, 12, fY);
-                doc.text(`Taxable: Rs.${calculatedTotals.taxableValue.toFixed(2)}`, 140, fY);
-                doc.text(`CGST/SGST: Rs.${(calculatedTotals.cgst + calculatedTotals.sgst).toFixed(2)}`, 140, fY + 5);
+                doc.text(`Amount in words: ${numberToWords(Math.round(calcTotals.grandTotal))}`, 12, fY);
+                doc.text(`Taxable: Rs.${calcTotals.taxableValue.toFixed(2)}`, 140, fY);
+                doc.text(`CGST/SGST: Rs.${(calcTotals.cgst + calcTotals.sgst).toFixed(2)}`, 140, fY + 5);
                 doc.setFont(undefined, 'bold');
-                doc.text(`Grand Total: Rs.${calculatedTotals.grandTotal.toFixed(2)}`, 140, fY + 12);
+                doc.text(`Grand Total: Rs.${calcTotals.grandTotal.toFixed(2)}`, 140, fY + 12);
 
-                doc.setFont(undefined, 'normal'); doc.setFontSize(7);
-                doc.text(`Bank: ${profile.bankName} | A/c: ${profile.accNo} | IFSC: ${profile.ifsc}`, 12, fY + 30);
+                // 6. BANK & DECLARATION
+                doc.setFont(undefined, 'normal'); doc.setFontSize(8);
+                doc.text(`Bank Details:`, 12, fY + 30);
+                doc.text(`Bank: ${profile.bankName} | A/c: ${profile.accNo} | IFSC: ${profile.ifsc}`, 12, fY + 35);
+
+                // 7. ADD SIGNATURE (Bottom Right)
+                if (profile.signature) {
+                    // Placing signature beautifully above "Authorized Signatory"
+                    doc.addImage(profile.signature, 150, fY + 35, 35, 15);
+                }
+                doc.line(145, fY + 52, 195, fY + 52); // Signature Line
+                doc.text("Authorized Signatory", 152, fY + 57);
+
+                // 8. FOOTER
                 doc.text("Save Paper, Save Tree | Jai Hind!", 105, 285, { align: 'center' });
-                doc.save(`${meta.invoiceNo}.pdf`);
+                
+                doc.save(`${invoiceData.invoiceNo}.pdf`);
             };
 
             return (
-                <div className="max-w-md mx-auto min-h-screen flex flex-col">
+                <div className="max-w-md mx-auto min-h-screen flex flex-col bg-gray-50">
                     <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-50">
                         <h1 className="font-black text-indigo-700 italic text-xl">TENDER MITRA</h1>
-                        <i className="fas fa-user-circle text-gray-300 text-2xl"></i>
+                        <button onClick={() => setView(view === 'home' ? 'profile' : 'home')} className="bg-indigo-50 text-indigo-700 px-4 py-1 rounded-full text-xs font-bold">
+                            {view === 'home' ? 'My Details' : 'Back'}
+                        </button>
                     </header>
 
                     <main className="flex-1">
-                        {view === 'home' ? (
-                            <HomeView 
-                                invoices={invoices} 
-                                setView={setView} 
-                                setShowBillModal={setShowBillModal} 
-                                generatePDF={generatePDF} 
-                            />
-                        ) : (
-                            <ProfileView 
-                                profile={profile} 
-                                setProfile={setProfile} 
-                                setView={setView} 
-                            />
+                        {/* ================= HOME VIEW ================= */}
+                        {view === 'home' && (
+                            <div className="p-4 space-y-4">
+                                <div className="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-indigo-600">
+                                    <p className="text-xs font-bold text-gray-400 uppercase">Total Sales</p>
+                                    <h2 className="text-3xl font-black text-indigo-900">₹{invoices.reduce((a,b) => a + b.totals.grandTotal, 0).toLocaleString()}</h2>
+                                </div>
+                                <button onClick={() => setShowBillModal(true)} className="w-full bg-white h-24 rounded-3xl shadow-sm border flex items-center justify-center space-x-3 active:scale-95 transition-transform">
+                                    <div className="bg-green-100 p-3 rounded-full"><i className="fas fa-plus text-green-600"></i></div>
+                                    <span className="font-bold text-lg text-gray-700">Create New Invoice</span>
+                                </button>
+                                <h3 className="font-bold text-gray-800 pt-2">Recent Invoices</h3>
+                                {invoices.map(inv => (
+                                    <div key={inv.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
+                                        <div>
+                                            <p className="font-bold text-sm">{inv.meta.buyerName}</p>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase">{inv.meta.invoiceNo} • {inv.meta.date}</p>
+                                        </div>
+                                        <button onClick={() => generatePDF(inv.meta, inv.totals)} className="text-indigo-600 p-2"><i className="fas fa-download"></i></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ================= PROFILE (MY DETAILS) VIEW ================= */}
+                        {view === 'profile' && (
+                            <div className="p-4 space-y-4">
+                                <div className="bg-white p-6 rounded-3xl shadow-lg space-y-4">
+                                    <h2 className="font-bold text-xl border-b pb-2">Business Settings</h2>
+                                    
+                                    {/* LOGO & SIGNATURE UPLOAD */}
+                                    <div className="grid grid-cols-2 gap-4 pb-2">
+                                        <label className="block border-2 border-dashed border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-50">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Upload Logo</span>
+                                            <i className="fas fa-image text-indigo-300 text-xl mb-2"></i>
+                                            <input type="file" accept="image/*" onChange={(e) => handleImageUpload('logo', e)} className="hidden" />
+                                            {profile.logo && <img src={profile.logo} className="h-10 mx-auto object-contain mt-1" alt="Logo" />}
+                                        </label>
+                                        <label className="block border-2 border-dashed border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-50">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Upload Sign</span>
+                                            <i className="fas fa-signature text-indigo-300 text-xl mb-2"></i>
+                                            <input type="file" accept="image/*" onChange={(e) => handleImageUpload('signature', e)} className="hidden" />
+                                            {profile.signature && <img src={profile.signature} className="h-10 mx-auto object-contain mt-1" alt="Sign" />}
+                                        </label>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Company Name</span>
+                                            <input value={profile.companyName} onChange={e => handleProfileChange('companyName', e.target.value)} className="w-full border-b p-2 text-sm bg-transparent" />
+                                        </label>
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Address</span>
+                                            <input value={profile.address} onChange={e => handleProfileChange('address', e.target.value)} className="w-full border-b p-2 text-sm bg-transparent" />
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <label className="block">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase">GSTIN</span>
+                                                <input value={profile.gstin} onChange={e => handleProfileChange('gstin', e.target.value)} className="w-full border-b p-2 text-sm bg-transparent" />
+                                            </label>
+                                            <label className="block">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase">State Code</span>
+                                                <input value={profile.stateCode} onChange={e => handleProfileChange('stateCode', e.target.value)} className="w-full border-b p-2 text-sm bg-transparent" />
+                                            </label>
+                                        </div>
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Bank Name</span>
+                                            <input value={profile.bankName} onChange={e => handleProfileChange('bankName', e.target.value)} className="w-full border-b p-2 text-sm bg-transparent" />
+                                        </label>
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Account Number</span>
+                                            <input value={profile.accNo} onChange={e => handleProfileChange('accNo', e.target.value)} className="w-full border-b p-2 text-sm bg-transparent" />
+                                        </label>
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">IFSC Code</span>
+                                            <input value={profile.ifsc} onChange={e => handleProfileChange('ifsc', e.target.value)} className="w-full border-b p-2 text-sm bg-transparent" />
+                                        </label>
+                                    </div>
+                                    <button onClick={() => setView('home')} className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-6 shadow-lg">Save Details</button>
+                                </div>
+                            </div>
                         )}
                     </main>
 
+                    {/* ================= BILL MODAL ================= */}
                     {showBillModal && (
-                        <div className="fixed inset-0 bg-black/50 z-[100] flex items-end">
-                            <div className="bg-white w-full rounded-t-[3rem] p-6 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl space-y-4 animate-slideUp">
+                        <div className="fixed inset-0 bg-black/60 z-[100] flex items-end">
+                            <div className="bg-white w-full rounded-t-[3rem] p-6 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl space-y-4">
                                 <div className="flex justify-between items-center border-b pb-4">
                                     <h3 className="font-bold text-lg uppercase tracking-widest">New GST Invoice</h3>
-                                    <button onClick={() => setShowBillModal(false)} className="text-gray-300 text-3xl p-2">&times;</button>
+                                    <button onClick={() => setShowBillModal(false)} className="text-gray-400 text-3xl">&times;</button>
                                 </div>
 
                                 <div className="space-y-3">
-                                    <input placeholder="Buyer Name" className="w-full border p-3 rounded-xl text-sm" onChange={e => setBill({...bill, buyerName: e.target.value})} />
-                                    <input placeholder="Buyer Address" className="w-full border p-3 rounded-xl text-sm" onChange={e => setBill({...bill, buyerAddress: e.target.value})} />
+                                    <input placeholder="Buyer Name" value={bill.buyerName} onChange={e => handleBillChange('buyerName', e.target.value)} className="w-full border p-3 rounded-xl text-sm" />
+                                    <input placeholder="Buyer Address" value={bill.buyerAddress} onChange={e => handleBillChange('buyerAddress', e.target.value)} className="w-full border p-3 rounded-xl text-sm" />
+                                    <input placeholder="Buyer GSTIN" value={bill.buyerGSTIN} onChange={e => handleBillChange('buyerGSTIN', e.target.value)} className="w-full border p-3 rounded-xl text-sm" />
                                     
                                     <div className="space-y-2 pt-2">
                                         <p className="text-[10px] font-bold text-gray-400 uppercase">Items</p>
                                         {bill.items.map(it => (
-                                            <div key={it.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
-                                                <input placeholder="Item Description" className="w-full bg-transparent font-bold text-sm" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, desc: e.target.value} : x)})} />
+                                            <div key={it.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-2 relative">
+                                                {bill.items.length > 1 && (
+                                                    <button onClick={() => setBill(p => ({...p, items: p.items.filter(x => x.id !== it.id)}))} className="absolute top-2 right-2 text-red-500 font-bold">&times;</button>
+                                                )}
+                                                <input placeholder="Item Description" value={it.desc} onChange={e => handleItemChange(it.id, 'desc', e.target.value)} className="w-full bg-transparent font-bold text-sm border-b p-1" />
                                                 <div className="grid grid-cols-3 gap-2">
-                                                    <input placeholder="HSN" className="border-b bg-transparent text-xs p-1" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, hsn: e.target.value} : x)})} />
-                                                    <input type="number" placeholder="Qty" className="border-b bg-transparent text-xs p-1" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, qty: Number(e.target.value)} : x)})} />
-                                                    <input type="number" placeholder="Rate" className="border-b bg-transparent text-xs p-1" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, rate: Number(e.target.value)} : x)})} />
+                                                    <input placeholder="HSN" value={it.hsn} onChange={e => handleItemChange(it.id, 'hsn', e.target.value)} className="bg-transparent text-xs border-b p-1" />
+                                                    <input type="number" placeholder="Qty" value={it.qty} onChange={e => handleItemChange(it.id, 'qty', Number(e.target.value))} className="bg-transparent text-xs border-b p-1" />
+                                                    <input type="number" placeholder="Rate" value={it.rate} onChange={e => handleItemChange(it.id, 'rate', Number(e.target.value))} className="bg-transparent text-xs border-b p-1" />
                                                 </div>
                                             </div>
                                         ))}
-                                        <button onClick={() => setBill({...bill, items: [...bill.items, { id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]})} className="text-xs text-indigo-700 font-bold p-1">+ Add Item</button>
+                                        <button onClick={() => setBill(p => ({...p, items: [...p.items, { id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]}))} className="text-xs text-indigo-700 font-bold">+ Add Item</button>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input type="number" placeholder="Discount (-)" value={bill.discount} onChange={e => handleBillChange('discount', Number(e.target.value))} className="border p-3 rounded-xl text-sm" />
+                                        <input type="number" placeholder="Transport (+)" value={bill.transportCharges} onChange={e => handleBillChange('transportCharges', Number(e.target.value))} className="border p-3 rounded-xl text-sm" />
                                     </div>
 
                                     <div className="bg-indigo-700 text-white p-6 rounded-[2.5rem] shadow-xl flex justify-between items-center mt-4">
                                         <div>
-                                            <p className="text-[10px] opacity-70">Payable Amount</p>
+                                            <p className="text-[10px] opacity-70">Grand Total</p>
                                             <h2 className="text-2xl font-black">₹{totals.grandTotal.toLocaleString()}</h2>
                                         </div>
                                         <button onClick={() => {
-                                            const newInv = { meta: bill, items: bill.items, totals, id: Date.now() };
+                                            const newInv = { meta: bill, totals, id: Date.now() };
                                             setInvoices([newInv, ...invoices]);
-                                            generatePDF(bill, bill.items, totals);
+                                            generatePDF(bill, totals);
                                             setShowBillModal(false);
-                                        }} className="bg-yellow-400 text-indigo-900 px-6 py-4 rounded-2xl font-black text-xs uppercase active:scale-95 transition-all">Download</button>
+                                        }} className="bg-yellow-400 text-indigo-900 px-6 py-4 rounded-2xl font-black text-xs uppercase shadow-md active:scale-95 transition-transform">Download</button>
                                     </div>
                                 </div>
                             </div>
