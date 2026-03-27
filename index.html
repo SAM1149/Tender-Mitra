@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tender Mitra Pro | Tally Style Billing</title>
+    <title>Tender Mitra | Professional GST SaaS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -12,279 +12,257 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-        body { font-family: 'Roboto', sans-serif; -webkit-font-smoothing: antialiased; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        input:focus, select:focus { outline: 2px solid #4f46e5; border-color: transparent; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useCallback, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- CUSTOM HOOK FOR STABLE PROFILE INPUTS ---
-        function useProfileState(initialData) {
-            const [data, setData] = useState(initialData);
-            const updateField = (field, value) => {
-                const newData = { ...data, [field]: value };
-                setData(newData);
-                localStorage.setItem('tm_profile_v2', JSON.stringify(newData));
-            };
-            return [data, updateField];
+        // --- UTILITY: NUMBER TO WORDS ---
+        function numberToWords(num) {
+            const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            if ((num = num.toString()).length > 9) return 'Overflow';
+            const n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+            if (!n) return ''; 
+            let str = '';
+            str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+            str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+            str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+            str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+            str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) + 'Only' : 'Only';
+            return str;
         }
 
         function TenderMitra() {
-            const [view, setView] = useState('home'); 
-            const [invoices, setInvoices] = useState(() => {
-                const saved = localStorage.getItem('tm_invoices');
-                return saved ? JSON.parse(saved) : [];
-            });
+            const [view, setView] = useState('home');
+            const [invoices, setInvoices] = useState(() => JSON.parse(localStorage.getItem('tm_invoices_v3')) || []);
             const [showBillModal, setShowBillModal] = useState(false);
-            
-            // Profile State with persistence
-            const [userProfile, setUserProfile] = useProfileState(() => {
-                const saved = localStorage.getItem('tm_profile_v2');
-                return saved ? JSON.parse(saved) : {
-                    name: "SELF LEARNING",
-                    subHeader: "TALLY CUSTOMIZATION",
-                    address: "A.B Patel Road, Goregaon, Mumbai",
-                    gstin: "27AXXXX54521X1Z",
-                    phone: "9407808553",
-                    email: "computersolutionsxyz@gmail.com",
-                    bankName: "AXIS BANK NEW4525",
-                    accNo: "452145224525",
-                    ifsc: "AXIS45245",
-                    pan: "ACPW2876P",
-                    uam: "MH33DO128954",
-                    logo: null
-                };
+
+            // 1. STABLE PROFILE STATE (Focus Fix)
+            const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem('tm_profile_v3')) || {
+                companyName: "SAM ENTERPRISES",
+                address: "Narnaul, Haryana",
+                gstin: "06AAAAA0000A1Z5",
+                state: "Haryana",
+                stateCode: "06",
+                bankName: "AXIS BANK",
+                accNo: "91234567890",
+                ifsc: "UTIB0001234",
+                terms: "Goods once sold will not be taken back.",
+                declaration: "We declare that this invoice shows the actual price of the goods described."
             });
 
-            // Bill State for Multiple Items
-            const [billMeta, setBillMeta] = useState({ custName: '', custAddress: '', invoiceNo: 'GST/20-21/0101', date: new Date().toISOString().split('T')[0] });
-            const [items, setItems] = useState([{ id: 1, desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]);
+            // 2. INVOICE STATE
+            const [bill, setBill] = useState({
+                invoiceNo: `TM-${Date.now().toString().slice(-4)}`,
+                date: new Date().toISOString().split('T')[0],
+                dueDate: "",
+                orderRef: "",
+                buyerName: "",
+                buyerGSTIN: "",
+                buyerAddress: "",
+                buyerStateCode: "",
+                shipTo: "",
+                placeOfSupply: "Haryana",
+                modeOfPayment: "Bank Transfer",
+                items: [{ id: 1, desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }],
+                transportCharges: 0,
+                packagingCharges: 0,
+                totalDiscount: 0
+            });
 
-            useEffect(() => {
-                localStorage.setItem('tm_invoices', JSON.stringify(invoices));
-            }, [invoices]);
+            useEffect(() => localStorage.setItem('tm_profile_v3', JSON.stringify(profile)), [profile]);
+            useEffect(() => localStorage.setItem('tm_invoices_v3', JSON.stringify(invoices)), [invoices]);
 
-            const addNewItem = () => {
-                setItems([...items, { id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]);
-            };
-
-            const updateItem = (id, field, value) => {
-                setItems(items.map(it => it.id === id ? { ...it, [field]: value } : it));
-            };
-
-            const removeItem = (id) => {
-                if (items.length > 1) setItems(items.filter(it => it.id !== id));
-            };
-
+            // CALCULATIONS
             const totals = useMemo(() => {
-                let subTotal = 0;
-                let totalTax = 0;
-                items.forEach(it => {
-                    const rowTotal = it.qty * it.rate;
-                    subTotal += rowTotal;
-                    totalTax += rowTotal * (it.gstRate / 100);
-                });
-                return { subTotal, cgst: totalTax / 2, sgst: totalTax / 2, grandTotal: subTotal + totalTax };
-            }, [items]);
+                let taxableValue = bill.items.reduce((acc, it) => acc + (it.qty * it.rate), 0);
+                taxableValue -= Number(bill.totalDiscount);
+                const totalGST = bill.items.reduce((acc, it) => acc + ((it.qty * it.rate) * (it.gstRate / 100)), 0);
+                const grandTotal = taxableValue + totalGST + Number(bill.transportCharges) + Number(bill.packagingCharges);
+                return { taxableValue, cgst: totalGST / 2, sgst: totalGST / 2, grandTotal };
+            }, [bill]);
 
-            // --- PDF GENERATOR ---
-            const downloadInvoice = (invData) => {
+            // PDF GENERATOR
+            const generatePDF = (data) => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 
-                // Header (Tally Style)
-                doc.setFontSize(22);
-                doc.setTextColor(180, 0, 0); // Red Header
-                doc.text(userProfile.name, 105, 15, { align: 'center' });
-                doc.setTextColor(0, 0, 0);
-                doc.setFontSize(14);
-                doc.text(userProfile.subHeader, 105, 22, { align: 'center' });
-                doc.setFontSize(9);
-                doc.text(`${userProfile.address} | Contact: ${userProfile.phone}`, 105, 28, { align: 'center' });
-                doc.text(`GSTIN/UIN: ${userProfile.gstin}`, 105, 33, { align: 'center' });
+                // HEADER
+                doc.setFontSize(20); doc.setTextColor(40); doc.setFont(undefined, 'bold');
+                doc.text(profile.companyName, 105, 15, { align: 'center' });
+                doc.setFontSize(9); doc.setFont(undefined, 'normal');
+                doc.text(`${profile.address} | GSTIN: ${profile.gstin} | State: ${profile.state} (${profile.stateCode})`, 105, 22, { align: 'center' });
+                
+                doc.setDrawColor(200); doc.line(10, 26, 200, 26);
+                doc.setFontSize(14); doc.text("TAX INVOICE", 105, 33, { align: 'center' });
                 doc.line(10, 36, 200, 36);
 
-                // Buyer & Invoice Details
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'bold');
-                doc.text("Details for Buyer:", 12, 42);
+                // PARTY DETAILS
+                doc.setFontSize(9); doc.setFont(undefined, 'bold');
+                doc.text("Bill To (Buyer):", 12, 42);
+                doc.text("Ship To:", 105, 42);
                 doc.setFont(undefined, 'normal');
-                doc.text(invData.meta.custName, 12, 48);
-                doc.text(invData.meta.custAddress, 12, 53);
+                doc.text(`${data.buyerName}\n${data.buyerAddress}\nGSTIN: ${data.buyerGSTIN}\nState Code: ${data.buyerStateCode}`, 12, 47);
+                doc.text(data.shipTo || "Same as Billing", 105, 47);
 
-                doc.text(`Invoice No: ${invData.meta.invoiceNo}`, 120, 42);
-                doc.text(`Date: ${invData.meta.date}`, 170, 42);
-                doc.line(10, 60, 200, 60);
+                // INVOICE META
+                doc.text(`Invoice No: ${data.invoiceNo}`, 160, 42);
+                doc.text(`Date: ${data.date}`, 160, 47);
+                doc.text(`Place of Supply: ${data.placeOfSupply}`, 160, 52);
 
-                // Main Items Table
-                const tableBody = invData.items.map((it, index) => [
-                    index + 1,
-                    it.desc,
-                    it.hsn,
-                    it.qty,
-                    it.rate.toFixed(2),
-                    (it.qty * it.rate).toFixed(2)
-                ]);
-
+                // TABLE
+                const body = data.items.map((it, idx) => [idx + 1, it.desc, it.hsn, it.qty, it.rate.toFixed(2), (it.qty * it.rate).toFixed(2)]);
                 doc.autoTable({
-                    startY: 65,
-                    head: [['Sr', 'Description', 'HSN', 'Qty', 'Unit Rate', 'Amount']],
-                    body: tableBody,
+                    startY: 70,
+                    head: [['S.No', 'Description of Goods', 'HSN', 'Qty', 'Unit Price', 'Total Amount']],
+                    body: body,
                     theme: 'grid',
-                    headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-                    styles: { fontSize: 8 }
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0] }
                 });
 
-                // Summary Calculation
+                // SUMMARY
                 const finalY = doc.lastAutoTable.finalY + 10;
-                doc.text(`Sub-Total: Rs.${invData.totals.subTotal.toFixed(2)}`, 140, finalY);
-                doc.text(`CGST: Rs.${invData.totals.cgst.toFixed(2)}`, 140, finalY + 5);
-                doc.text(`SGST: Rs.${invData.totals.sgst.toFixed(2)}`, 140, finalY + 10);
-                doc.setFont(undefined, 'bold');
-                doc.text(`GRAND TOTAL: Rs.${invData.totals.grandTotal.toFixed(2)}`, 140, finalY + 18);
-
-                // Footer: Bank & Signature
-                doc.setFont(undefined, 'normal');
-                doc.setFontSize(8);
-                doc.text("Bank Details:", 12, finalY + 30);
-                doc.text(`Bank: ${userProfile.bankName} | A/c: ${userProfile.accNo} | IFSC: ${userProfile.ifsc}`, 12, finalY + 35);
-                doc.text(`PAN: ${userProfile.pan} | UAM: ${userProfile.uam}`, 12, finalY + 40);
-
-                doc.line(140, finalY + 60, 190, finalY + 60);
-                doc.text("Authorized Signatory", 150, finalY + 65);
+                doc.setFontSize(9);
+                doc.text(`Total Amount (in words): ${numberToWords(Math.round(totals.grandTotal))}`, 12, finalY);
                 
+                const rightCol = 140;
+                doc.text(`Taxable Value:`, rightCol, finalY); doc.text(`Rs.${totals.taxableValue.toFixed(2)}`, 180, finalY);
+                doc.text(`CGST:`, rightCol, finalY + 5); doc.text(`Rs.${totals.cgst.toFixed(2)}`, 180, finalY + 5);
+                doc.text(`SGST:`, rightCol, finalY + 10); doc.text(`Rs.${totals.sgst.toFixed(2)}`, 180, finalY + 10);
+                doc.text(`Transport/Pkg:`, rightCol, finalY + 15); doc.text(`Rs.${(Number(data.transportCharges) + Number(data.packagingCharges)).toFixed(2)}`, 180, finalY + 15);
+                doc.setFont(undefined, 'bold');
+                doc.text(`Grand Total:`, rightCol, finalY + 22); doc.text(`Rs.${totals.grandTotal.toFixed(2)}`, 180, finalY + 22);
+
+                // FOOTER
+                doc.setFont(undefined, 'normal'); doc.setFontSize(8);
+                doc.text(`Bank: ${profile.bankName} | A/c: ${profile.accNo} | IFSC: ${profile.ifsc}`, 12, finalY + 40);
+                doc.text(`Declaration: ${profile.declaration}`, 12, finalY + 48);
+                doc.text(`Terms: ${profile.terms}`, 12, finalY + 53);
+
+                doc.text(`For ${profile.companyName}`, 160, finalY + 65);
+                doc.line(150, finalY + 80, 195, finalY + 80);
+                doc.text("Authorized Signatory", 155, finalY + 85);
+
                 doc.setFont(undefined, 'italic');
                 doc.text("Save Paper, Save Tree | Jai Hind!", 105, 285, { align: 'center' });
 
-                doc.save(`Invoice_${invData.meta.custName}.pdf`);
+                doc.save(`${data.invoiceNo}.pdf`);
             };
 
-            const saveBill = () => {
-                const invData = { meta: billMeta, items, totals, id: Date.now() };
-                setInvoices([invData, ...invoices]);
-                downloadInvoice(invData);
-                setShowBillModal(false);
-            };
-
-            // --- UI VIEWS ---
-            const Home = () => (
-                <div className="p-4 space-y-6">
-                    <div className="bg-indigo-700 p-6 rounded-3xl text-white shadow-lg">
-                        <p className="text-xs uppercase opacity-70">Total Revenue</p>
-                        <h1 className="text-3xl font-bold">₹{invoices.reduce((a,b)=>a+b.totals.grandTotal,0).toLocaleString()}</h1>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <button onClick={()=>setShowBillModal(true)} className="bg-white p-5 rounded-2xl border flex flex-col items-center shadow-sm">
-                            <i className="fas fa-plus-circle text-2xl text-green-500 mb-2"></i>
-                            <span className="font-bold text-sm">Create Bill</span>
-                        </button>
-                        <button onClick={()=>setView('profile')} className="bg-white p-5 rounded-2xl border flex flex-col items-center shadow-sm">
-                            <i className="fas fa-building text-2xl text-blue-500 mb-2"></i>
-                            <span className="font-bold text-sm">Company Profile</span>
-                        </button>
-                    </div>
-                    <div className="space-y-3">
-                        <h3 className="font-bold text-gray-700">Recent Invoices</h3>
-                        {invoices.map(inv => (
-                            <div key={inv.id} className="bg-white p-4 rounded-xl border flex justify-between items-center shadow-xs">
-                                <div>
-                                    <p className="font-bold">{inv.meta.custName}</p>
-                                    <p className="text-[10px] text-gray-400 uppercase">{inv.meta.date} • {inv.items.length} Items</p>
-                                </div>
-                                <button onClick={()=>downloadInvoice(inv)} className="text-indigo-600"><i className="fas fa-download text-lg"></i></button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-
-            const Profile = () => (
-                <div className="p-4 space-y-4">
-                    <button onClick={()=>setView('home')} className="text-indigo-600 font-bold mb-2"><i className="fas fa-arrow-left"></i> Home</button>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
-                        <h2 className="font-bold text-xl border-b pb-2">Business Header</h2>
-                        <input value={userProfile.name} onChange={e=>setUserProfile('name', e.target.value)} placeholder="Company Name" className="w-full border p-3 rounded-lg" />
-                        <input value={userProfile.subHeader} onChange={e=>setUserProfile('subHeader', e.target.value)} placeholder="Subtitle (e.g. Construction)" className="w-full border p-3 rounded-lg" />
-                        <input value={userProfile.address} onChange={e=>setUserProfile('address', e.target.value)} placeholder="Full Address" className="w-full border p-3 rounded-lg" />
-                        <h2 className="font-bold text-xl border-b pb-2 pt-4">Bank & Tax</h2>
-                        <input value={userProfile.bankName} onChange={e=>setUserProfile('bankName', e.target.value)} placeholder="Bank Name" className="w-full border p-3 rounded-lg" />
-                        <input value={userProfile.accNo} onChange={e=>setUserProfile('accNo', e.target.value)} placeholder="Account Number" className="w-full border p-3 rounded-lg" />
-                        <div className="grid grid-cols-2 gap-2">
-                            <input value={userProfile.gstin} onChange={e=>setUserProfile('gstin', e.target.value)} placeholder="GSTIN" className="border p-3 rounded-lg" />
-                            <input value={userProfile.pan} onChange={e=>setUserProfile('pan', e.target.value)} placeholder="PAN No" className="border p-3 rounded-lg" />
-                        </div>
-                        <button onClick={()=>setView('home')} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-md">Save Settings</button>
-                    </div>
-                </div>
-            );
+            const addItem = () => setBill({...bill, items: [...bill.items, { id: Date.now(), desc: '', hsn: '', qty: 1, rate: 0, gstRate: 18 }]});
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-10">
-                    <div className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-30">
-                        <h1 className="font-black text-indigo-700 italic tracking-tighter text-xl">TENDER MITRA</h1>
-                        <i className="fas fa-user-circle text-gray-300 text-2xl"></i>
-                    </div>
+                <div className="max-w-md mx-auto min-h-screen bg-gray-100 flex flex-col">
+                    <header className="bg-white p-4 border-b flex justify-between items-center sticky top-0 z-40">
+                        <h1 className="font-black text-indigo-700 italic text-xl">TENDER MITRA</h1>
+                        <button onClick={() => setView(view === 'home' ? 'profile' : 'home')} className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">
+                            {view === 'home' ? 'Profile' : 'Back'}
+                        </button>
+                    </header>
 
-                    {view === 'home' && <Home />}
-                    {view === 'profile' && <Profile />}
+                    <main className="flex-1 pb-20">
+                        {view === 'home' ? (
+                            <div className="p-4 space-y-4">
+                                <div className="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-indigo-600">
+                                    <p className="text-xs font-bold text-gray-400">TOTAL BUSINESS VOLUME</p>
+                                    <h2 className="text-3xl font-black text-indigo-900">₹{invoices.reduce((a,b) => a + b.totals.grandTotal, 0).toLocaleString()}</h2>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => setShowBillModal(true)} className="bg-white h-32 rounded-3xl shadow-sm border flex flex-col items-center justify-center space-y-2">
+                                        <div className="bg-green-100 p-3 rounded-full"><i className="fas fa-plus text-green-600"></i></div>
+                                        <span className="font-bold text-sm">Create Invoice</span>
+                                    </button>
+                                    <button className="bg-white h-32 rounded-3xl shadow-sm border flex flex-col items-center justify-center space-y-2 opacity-50">
+                                        <div className="bg-orange-100 p-3 rounded-full"><i className="fas fa-gavel text-orange-600"></i></div>
+                                        <span className="font-bold text-sm">Find Tenders</span>
+                                    </button>
+                                </div>
+                                <h3 className="font-bold text-gray-800">Recent Invoices</h3>
+                                {invoices.map(inv => (
+                                    <div key={inv.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center">
+                                        <div>
+                                            <p className="font-bold text-sm">{inv.meta.buyerName}</p>
+                                            <p className="text-[10px] text-gray-400 font-bold">{inv.meta.invoiceNo} • {inv.meta.date}</p>
+                                        </div>
+                                        <button onClick={() => generatePDF({...inv.meta, items: inv.items})} className="text-indigo-600"><i className="fas fa-download"></i></button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-4 space-y-4">
+                                <h2 className="font-bold text-xl">Company Settings</h2>
+                                <div className="bg-white p-4 rounded-2xl space-y-3">
+                                    <input value={profile.companyName} onChange={e => setProfile({...profile, companyName: e.target.value})} placeholder="Company Name" className="w-full border-b p-2 text-sm" />
+                                    <input value={profile.address} onChange={e => setProfile({...profile, address: e.target.value})} placeholder="Full Address" className="w-full border-b p-2 text-sm" />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input value={profile.gstin} onChange={e => setProfile({...profile, gstin: e.target.value})} placeholder="GSTIN" className="border-b p-2 text-sm" />
+                                        <input value={profile.stateCode} onChange={e => setProfile({...profile, stateCode: e.target.value})} placeholder="State Code" className="border-b p-2 text-sm" />
+                                    </div>
+                                    <input value={profile.bankName} onChange={e => setProfile({...profile, bankName: e.target.value})} placeholder="Bank Name" className="w-full border-b p-2 text-sm" />
+                                    <input value={profile.accNo} onChange={e => setProfile({...profile, accNo: e.target.value})} placeholder="A/c Number" className="w-full border-b p-2 text-sm" />
+                                </div>
+                                <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">Settings are saved locally</p>
+                            </div>
+                        )}
+                    </main>
 
                     {showBillModal && (
-                        <div className="fixed inset-0 bg-black/60 z-50 flex items-end animate-fadeIn">
-                            <div className="bg-white w-full rounded-t-[2rem] p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl">
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-end animate-fadeIn backdrop-blur-sm">
+                            <div className="bg-white w-full rounded-t-[3rem] p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl">
                                 <div className="flex justify-between items-center border-b pb-4">
-                                    <h3 className="font-bold text-xl uppercase tracking-tighter">New Tally Invoice</h3>
-                                    <button onClick={()=>setShowBillModal(false)} className="text-gray-300 text-3xl">&times;</button>
+                                    <h3 className="font-black text-xl italic uppercase">Pro Invoice</h3>
+                                    <button onClick={() => setShowBillModal(false)} className="text-gray-300 text-3xl">&times;</button>
                                 </div>
                                 
-                                {/* Meta Section */}
-                                <div className="space-y-2">
-                                    <input placeholder="Buyer Name" className="w-full border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, custName: e.target.value})} />
-                                    <input placeholder="Buyer Address" className="w-full border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, custAddress: e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <input value={billMeta.invoiceNo} className="w-1/2 border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, invoiceNo: e.target.value})} />
-                                        <input type="date" value={billMeta.date} className="w-1/2 border p-3 rounded-xl text-sm" onChange={e=>setBillMeta({...billMeta, date: e.target.value})} />
-                                    </div>
-                                </div>
-
-                                {/* Multi-Item List */}
-                                <div className="space-y-4 pt-4 border-t">
-                                    <div className="flex justify-between items-center">
-                                        <h4 className="font-bold text-xs uppercase text-gray-400">Bill Items</h4>
-                                        <button onClick={addNewItem} className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">+ Add Item</button>
-                                    </div>
-                                    {items.map((it, idx) => (
-                                        <div key={it.id} className="bg-gray-50 p-4 rounded-2xl space-y-2 relative border border-gray-100">
-                                            <button onClick={()=>removeItem(it.id)} className="absolute -top-2 -right-2 bg-red-100 text-red-600 w-6 h-6 rounded-full text-xs">&times;</button>
-                                            <input placeholder="Description (e.g. T-Shirt 28)" className="w-full border-none bg-transparent font-bold text-sm" onChange={e=>updateItem(it.id, 'desc', e.target.value)} />
-                                            <div className="grid grid-cols-4 gap-2">
-                                                <input placeholder="HSN" className="border-b bg-transparent text-xs p-1" onChange={e=>updateItem(it.id, 'hsn', e.target.value)} />
-                                                <input type="number" placeholder="Qty" className="border-b bg-transparent text-xs p-1" onChange={e=>updateItem(it.id, 'qty', Number(e.target.value))} />
-                                                <input type="number" placeholder="Rate" className="border-b bg-transparent text-xs p-1" onChange={e=>updateItem(it.id, 'rate', Number(e.target.value))} />
-                                                <select className="border-b bg-transparent text-xs p-1 font-bold text-indigo-600" onChange={e=>updateItem(it.id, 'gstRate', Number(e.target.value))}>
-                                                    <option value="18">18%</option>
-                                                    <option value="12">12%</option>
-                                                    <option value="5">5%</option>
-                                                    <option value="0">0%</option>
-                                                </select>
-                                            </div>
+                                <div className="space-y-3">
+                                    <div className="bg-indigo-50 p-4 rounded-3xl space-y-2 border border-indigo-100">
+                                        <h4 className="text-[10px] font-bold text-indigo-400 uppercase">Party Details</h4>
+                                        <input placeholder="Buyer Name" className="w-full bg-transparent border-b border-indigo-200 p-1 text-sm font-bold" onChange={e => setBill({...bill, buyerName: e.target.value})} />
+                                        <input placeholder="Buyer Address" className="w-full bg-transparent border-b border-indigo-200 p-1 text-sm" onChange={e => setBill({...bill, buyerAddress: e.target.value})} />
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input placeholder="Buyer GSTIN" className="bg-transparent border-b border-indigo-200 p-1 text-xs" onChange={e => setBill({...bill, buyerGSTIN: e.target.value})} />
+                                            <input placeholder="State Code" className="bg-transparent border-b border-indigo-200 p-1 text-xs" onChange={e => setBill({...bill, buyerStateCode: e.target.value})} />
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* Total Summary */}
-                                <div className="bg-indigo-700 text-white p-5 rounded-3xl space-y-2 shadow-lg">
-                                    <div className="flex justify-between text-xs opacity-70 italic">
-                                        <span>Subtotal: ₹{totals.subTotal}</span>
-                                        <span>Tax (C+S): ₹{totals.cgst + totals.sgst}</span>
                                     </div>
-                                    <div className="flex justify-between items-center pt-2">
-                                        <p className="text-2xl font-black">₹{totals.grandTotal.toLocaleString()}</p>
-                                        <button onClick={saveBill} className="bg-yellow-400 text-indigo-900 px-6 py-4 rounded-2xl font-black text-xs uppercase shadow-md active:scale-95 transition-all">Download PDF</button>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center"><h4 className="text-xs font-bold text-gray-400 uppercase">Items</h4><button onClick={addItem} className="text-xs text-indigo-700 font-bold">+ Add Item</button></div>
+                                        {bill.items.map((it, idx) => (
+                                            <div key={it.id} className="bg-white border p-4 rounded-2xl relative shadow-sm">
+                                                <input placeholder="Item Description" className="w-full font-bold text-sm mb-2" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, desc: e.target.value} : x)})} />
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <input placeholder="HSN" className="border-b text-xs p-1" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, hsn: e.target.value} : x)})} />
+                                                    <input type="number" placeholder="Qty" className="border-b text-xs p-1" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, qty: Number(e.target.value)} : x)})} />
+                                                    <input type="number" placeholder="Rate" className="border-b text-xs p-1" onChange={e => setBill({...bill, items: bill.items.map(x => x.id === it.id ? {...x, rate: Number(e.target.value)} : x)})} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-3xl grid grid-cols-2 gap-4">
+                                        <input type="number" placeholder="Discount (₹)" className="border-b bg-transparent p-1 text-xs" onChange={e => setBill({...bill, totalDiscount: Number(e.target.value)})} />
+                                        <input type="number" placeholder="Transport (₹)" className="border-b bg-transparent p-1 text-xs" onChange={e => setBill({...bill, transportCharges: Number(e.target.value)})} />
+                                    </div>
+
+                                    <div className="bg-indigo-700 text-white p-6 rounded-[2.5rem] shadow-xl">
+                                        <div className="flex justify-between items-end">
+                                            <div><p className="text-[10px] opacity-70 italic">Final Grand Total</p><h2 className="text-3xl font-black">₹{totals.grandTotal.toLocaleString()}</h2></div>
+                                            <button onClick={() => {
+                                                const inv = { meta: bill, items: bill.items, totals, id: Date.now() };
+                                                setInvoices([inv, ...invoices]);
+                                                generatePDF(bill);
+                                                setShowBillModal(false);
+                                            }} className="bg-yellow-400 text-indigo-900 px-6 py-4 rounded-2xl font-black text-xs uppercase shadow-md active:scale-95 transition-all">Download</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
